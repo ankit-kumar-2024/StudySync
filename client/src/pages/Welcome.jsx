@@ -56,7 +56,7 @@ const WelcomePage = () => {
             : "bg-transparent"
         }`}
       >
-        <div className="h-20 max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <div className="h-16 max-w-7xl mx-auto px-6 flex items-center justify-between border-b-2 border-[#e6eeff] shadow-lg">
           <div className="flex items-center gap-2 cursor-pointer">
             <div className="w-9 h-9 rounded-xl bg-[#4f46e5] flex items-center justify-center text-white">
               <FiBookOpen className="text-[20px]" />
@@ -125,9 +125,9 @@ const WelcomePage = () => {
         )}
       </header>
 
-      <main className="pt-20">
+      <main className="pt-16">
         {/* HERO SECTION */}
-        <section className="relative w-full overflow-hidden pt-8 pb-20 md:py-24 bg-gradient-to-b from-[#eff4ff] via-[#f8f9ff] to-[#f8f9ff]">
+        <section className="relative w-full overflow-hidden py-16 bg-gradient-to-b from-[#eff4ff] via-[#f8f9ff] to-[#f8f9ff]">
           <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#4f46e5]/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute top-1/3 -right-24 w-96 h-96 bg-[#8a4cfc]/15 rounded-full blur-3xl pointer-events-none" />
 
