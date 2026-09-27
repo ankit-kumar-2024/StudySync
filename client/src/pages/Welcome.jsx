@@ -50,13 +50,13 @@ const WelcomePage = () => {
     <div className="bg-[#f8f9ff] font-sans text-[#121c2a] overflow-x-hidden">
       {/* NAVBAR */}
       <header
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 border-b-2 border-[#e6eeff] shadow-lg ${
           scrolled
             ? "bg-white/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(79,70,229,0.08)]"
             : "bg-transparent"
         }`}
       >
-        <div className="h-16 max-w-7xl mx-auto px-6 flex items-center justify-between border-b-2 border-[#e6eeff] shadow-lg">
+        <div className="h-16 max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer">
             <div className="w-9 h-9 rounded-xl bg-[#4f46e5] flex items-center justify-center text-white">
               <FiBookOpen className="text-[20px]" />
