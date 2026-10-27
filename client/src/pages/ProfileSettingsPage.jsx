@@ -6,10 +6,17 @@ import {
   IconShield,
   IconCheck,
 } from "../components/common/Icons";
-import { updateProfile, updatePreferences } from "../store/slices/authSlice";
+import {
+  updateProfile,
+  updatePreferences,
+  logout,
+} from "../store/slices/authSlice";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileSettingsPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const user = useSelector((state) => state.auth.user);
   const settings = useSelector((state) => state.auth.settings);
 
@@ -27,31 +34,36 @@ export default function ProfileSettingsPage() {
   });
 
   const [preferences, setPreferences] = useState({
-    emailDeadlines: settings.emailDeadlines,
-    aiDailyTips: settings.aiDailyTips,
-    sprintModeAlerts: settings.sprintModeAlerts,
+    emailDeadlines: settings?.emailDeadlines ?? true,
+    aiDailyTips: settings?.aiDailyTips ?? true,
+    sprintModeAlerts: settings?.sprintModeAlerts ?? false,
   });
 
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     dispatch(updateProfile(profileData));
-    setSaveStatus("Profile and target exams synced to Redux successfully!");
+    setSaveStatus("Profile and target exams updated successfully!");
     setTimeout(() => setSaveStatus(""), 4000);
   };
 
   const handlePreferencesSubmit = (e) => {
     e.preventDefault();
     dispatch(updatePreferences(preferences));
-    setSaveStatus("Notification channels saved!");
+    setSaveStatus("Notification channels saved successfully!");
     setTimeout(() => setSaveStatus(""), 4000);
   };
 
+  const handleLogoutEverywhere = () => {
+    dispatch(logout());
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6 font-['Inter',sans-serif] text-[#121c2a]">
+    <div className="w-full max-w-5xl mx-auto space-y-6 font-['Inter',sans-serif] text-[#121c2a]">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             Account & Preferences
           </h1>
           <p className="text-xs text-[#464555]">
@@ -61,11 +73,11 @@ export default function ProfileSettingsPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center p-1 bg-white rounded-2xl border border-[#dee9fc] shadow-xs">
+        <div className="flex items-center p-1 bg-white rounded-2xl border border-[#dee9fc] shadow-xs self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setActiveTab("profile")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "profile"
                 ? "bg-[#3525cd] text-white shadow-xs"
                 : "text-[#464555] hover:text-[#121c2a]"
@@ -77,7 +89,7 @@ export default function ProfileSettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("preferences")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "preferences"
                 ? "bg-[#3525cd] text-white shadow-xs"
                 : "text-[#464555] hover:text-[#121c2a]"
@@ -89,7 +101,7 @@ export default function ProfileSettingsPage() {
           <button
             type="button"
             onClick={() => setActiveTab("security")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "security"
                 ? "bg-[#3525cd] text-white shadow-xs"
                 : "text-[#464555] hover:text-[#121c2a]"
@@ -110,7 +122,7 @@ export default function ProfileSettingsPage() {
 
       {/* Tab 1: Profile */}
       {activeTab === "profile" && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#dee9fc] shadow-xs space-y-6">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 border border-[#dee9fc] shadow-xs space-y-6">
           <form onSubmit={handleProfileSubmit} className="space-y-5 text-xs">
             <h3 className="text-sm font-bold text-[#121c2a]">
               Personal Information
@@ -221,7 +233,7 @@ export default function ProfileSettingsPage() {
 
       {/* Tab 2: Preferences */}
       {activeTab === "preferences" && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#dee9fc] shadow-xs space-y-6">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 border border-[#dee9fc] shadow-xs space-y-6">
           <form
             onSubmit={handlePreferencesSubmit}
             className="space-y-4 text-xs"
@@ -271,7 +283,7 @@ export default function ProfileSettingsPage() {
 
       {/* Tab 3: Security */}
       {activeTab === "security" && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#dee9fc] shadow-xs space-y-4 text-xs">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 border border-[#dee9fc] shadow-xs space-y-4 text-xs">
           <h3 className="text-sm font-bold text-[#121c2a]">
             Active JWT Session
           </h3>
@@ -280,10 +292,10 @@ export default function ProfileSettingsPage() {
             (1-hour window).
           </p>
           <button
-            onClick={() => alert("All active student sessions invalidated.")}
+            onClick={handleLogoutEverywhere}
             className="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl font-bold hover:bg-rose-100 transition-all cursor-pointer"
           >
-            Invalidate All Sessions
+            Log Out Everywhere
           </button>
         </div>
       )}

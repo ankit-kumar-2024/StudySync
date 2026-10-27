@@ -21,15 +21,18 @@ const navItems = [
   { label: "Practice Tests", to: "/app/tests", icon: IconQuiz },
 ];
 
-export default function LeftSidebar({ isOpen }) {
+export default function LeftSidebar({ isOpen, onClose }) {
   return (
     <aside
-      className={`fixed left-0 top-16 bottom-0 z-40 bg-white flex flex-col justify-between py-4 shadow-xs border-r border-[#dee9fc]/50 transition-all duration-300 ease-in-out overflow-hidden ${
-        isOpen ? "w-64" : "w-0"
+      className={`fixed left-0 top-16 bottom-0 z-40 bg-white flex flex-col justify-between py-4 shadow-xl lg:shadow-xs border-r border-[#dee9fc]/70 transition-all duration-300 ease-in-out ${
+        isOpen
+          ? "w-64 translate-x-0"
+          : "-translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
       }`}
     >
       <div className="w-64 h-full flex flex-col justify-between px-3">
-        <nav className="space-y-1">
+        {/* Navigation list */}
+        <nav className="space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -37,6 +40,7 @@ export default function LeftSidebar({ isOpen }) {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-xs font-semibold ${
                     isActive
@@ -46,15 +50,17 @@ export default function LeftSidebar({ isOpen }) {
                 }
               >
                 <Icon className="w-4 h-4 shrink-0" />
-                <span>{item.label}</span>
+                <span className="truncate">{item.label}</span>
               </NavLink>
             );
           })}
         </nav>
 
+        {/* Footer profile link */}
         <div className="pt-3 border-t border-[#dee9fc]/60 space-y-1">
           <NavLink
             to="/app/profile"
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-xs font-semibold ${
                 isActive

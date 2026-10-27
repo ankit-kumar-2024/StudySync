@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import {
-  IconTimer,
-  IconCheck,
-  IconClock,
-  IconSparkle,
-} from "../components/common/Icons";
+import { useDispatch } from "react-redux";
+import { IconCheck, IconClock } from "../components/common/Icons";
 import { recordTestAttempt } from "../store/slices/testsSlice";
 
 export default function TestsPage() {
@@ -81,7 +76,7 @@ export default function TestsPage() {
       if (selectedAnswers[idx] === q.correct) {
         score += 4;
       } else {
-        if (selectedAnswers[idx]) score -= 1; // Negative marking
+        if (selectedAnswers[idx]) score -= 1;
         weakTopics.push(q.topic);
       }
     });
@@ -105,20 +100,20 @@ export default function TestsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 font-['Inter',sans-serif] text-[#121c2a]">
+    <div className="w-full space-y-4 sm:space-y-6 font-['Inter',sans-serif] text-[#121c2a]">
       {/* Top Header */}
-      <div className="p-4 bg-white rounded-2xl border border-[#dee9fc] shadow-xs flex justify-between items-center">
+      <div className="p-4 bg-white rounded-2xl border border-[#dee9fc] shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
           <h1 className="text-sm sm:text-base font-bold text-[#121c2a]">
             Computer Science Diagnostic Quiz #3
           </h1>
-          <span className="text-xs text-gray-500">
-            +4.0 Marks / -1.0 Negative Marking Scheme
+          <span className="text-[11px] text-gray-500">
+            +4.0 Marks / -1.0 Negative Scheme
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#eff4ff] rounded-xl text-xs font-mono font-bold text-[#3525cd]">
-            <IconClock className="w-4 h-4" />
+        <div className="flex items-center justify-between sm:justify-end gap-3">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#eff4ff] rounded-xl text-xs font-mono font-bold text-[#3525cd]">
+            <IconClock className="w-4 h-4 shrink-0" />
             <span>{formattedTime}</span>
           </div>
           <button
@@ -130,15 +125,15 @@ export default function TestsPage() {
         </div>
       </div>
 
-      {/* Quiz Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-[#dee9fc] space-y-4">
-          <div className="flex items-center justify-between">
+      {/* Quiz Area: Stacks on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+        <div className="lg:col-span-8 bg-white p-4 sm:p-6 rounded-2xl border border-[#dee9fc] space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-bold text-[#3525cd]">
               Question {currentIdx + 1} of {questions.length}
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
-              Topic: {questions[currentIdx].topic}
+              {questions[currentIdx].topic}
             </span>
           </div>
 
@@ -150,7 +145,7 @@ export default function TestsPage() {
             {questions[currentIdx].options.map((opt, i) => (
               <label
                 key={i}
-                className={`block p-3.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                className={`block p-3 rounded-xl border text-xs cursor-pointer transition-all ${
                   selectedAnswers[currentIdx] === opt[0]
                     ? "border-[#3525cd] bg-[#eff4ff] font-bold text-[#3525cd]"
                     : "border-gray-200 hover:bg-gray-50"
@@ -188,20 +183,20 @@ export default function TestsPage() {
               }
               className="px-4 py-2 bg-[#3525cd] text-white rounded-xl text-xs font-bold disabled:opacity-40 cursor-pointer"
             >
-              Next Question
+              Next
             </button>
           </div>
         </div>
 
         {/* Question Palette */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-[#dee9fc] space-y-3">
+        <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-2xl border border-[#dee9fc] space-y-3">
           <h3 className="text-xs font-bold">Question Palette</h3>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-2 gap-2 text-xs">
             {questions.map((q, idx) => (
               <button
                 key={q.id}
                 onClick={() => setCurrentIdx(idx)}
-                className={`p-2.5 rounded-xl font-bold cursor-pointer transition-all ${
+                className={`p-2 rounded-xl font-bold cursor-pointer transition-all ${
                   currentIdx === idx
                     ? "bg-[#3525cd] text-white shadow-xs"
                     : selectedAnswers[idx]
@@ -216,48 +211,43 @@ export default function TestsPage() {
         </div>
       </div>
 
-      {/* Test Diagnostic Evaluation Modal */}
+      {/* Test Result Evaluation Modal */}
       {resultModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-[#dee9fc]">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-md w-full space-y-4 sm:space-y-5 shadow-2xl border border-[#dee9fc]">
             <div className="flex items-center gap-2 text-emerald-600">
-              <IconCheck className="w-5 h-5" />
-              <h3 className="text-base font-bold text-[#121c2a]">
-                Test Submitted Successfully!
+              <IconCheck className="w-5 h-5 shrink-0" />
+              <h3 className="text-sm sm:text-base font-bold text-[#121c2a]">
+                Test Evaluation Summary
               </h3>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-3 bg-[#f8f9ff] rounded-2xl border border-[#dee9fc]">
-                <p className="text-[10px] text-gray-500 font-semibold">
-                  Raw Score
-                </p>
-                <p className="text-base font-bold text-[#3525cd]">
+              <div className="p-2 sm:p-3 bg-[#f8f9ff] rounded-2xl border border-[#dee9fc]">
+                <p className="text-[10px] text-gray-500 font-semibold">Score</p>
+                <p className="text-sm sm:text-base font-bold text-[#3525cd]">
                   {resultModal.score}/{resultModal.total_marks}
                 </p>
               </div>
-              <div className="p-3 bg-[#f8f9ff] rounded-2xl border border-[#dee9fc]">
+              <div className="p-2 sm:p-3 bg-[#f8f9ff] rounded-2xl border border-[#dee9fc]">
                 <p className="text-[10px] text-gray-500 font-semibold">
                   Percentage
                 </p>
-                <p className="text-base font-bold text-emerald-600">
+                <p className="text-sm sm:text-base font-bold text-emerald-600">
                   {resultModal.percentage}%
                 </p>
               </div>
-              <div className="p-3 bg-[#f8f9ff] rounded-2xl border border-[#dee9fc]">
-                <p className="text-[10px] text-gray-500 font-semibold">
-                  Time Spent
-                </p>
-                <p className="text-base font-bold text-[#121c2a]">
+              <div className="p-2 sm:p-3 bg-[#f8f9ff] rounded-2xl border border-[#dee9fc]">
+                <p className="text-[10px] text-gray-500 font-semibold">Time</p>
+                <p className="text-sm sm:text-base font-bold text-[#121c2a]">
                   {resultModal.time_taken}m
                 </p>
               </div>
             </div>
 
-            {/* Diagnostic Weak Topics Identification (Section 7.4) */}
             <div className="space-y-2">
               <span className="text-xs font-bold text-[#121c2a] block">
-                Identified Weak Topics to Revise:
+                Weak Topics Identified:
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {resultModal.weak_topics.length === 0 ? (
@@ -268,7 +258,7 @@ export default function TestsPage() {
                   resultModal.weak_topics.map((t, idx) => (
                     <span
                       key={idx}
-                      className="px-2.5 py-1 rounded-lg bg-rose-50 text-[#ba1a1a] text-[11px] font-semibold border border-rose-200"
+                      className="px-2 py-0.5 rounded-lg bg-rose-50 text-[#ba1a1a] text-[10px] sm:text-[11px] font-semibold border border-rose-200"
                     >
                       {t}
                     </span>

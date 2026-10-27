@@ -6,7 +6,7 @@ import {
   IconSchool,
   IconSparkle,
   IconBell,
-  IconCheck,
+  IconSearch,
 } from "../common/Icons";
 import {
   markAsRead,
@@ -27,8 +27,8 @@ export default function Header({
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
-  // Derive user initials
   const initials = user?.name
     ? user.name
         .split(" ")
@@ -39,79 +39,60 @@ export default function Header({
     : "SR";
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 z-50 bg-white/85 backdrop-blur-xl shadow-xs border-b border-[#dee9fc]/60">
-      <div className="h-16 w-full px-4 sm:px-6 flex items-center justify-between gap-4">
-        {/* Brand & Sidebar Toggle */}
-        <div className="flex items-center gap-3 min-w-[200px]">
+    <header className="fixed top-0 left-0 right-0 h-16 z-50 bg-white/90 backdrop-blur-xl shadow-xs border-b border-[#dee9fc]/70">
+      <div className="h-16 w-full px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4">
+        {/* Left: Brand & Sidebar Trigger */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 text-[#464555] hover:text-[#121c2a] hover:bg-[#dee9fc] rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-[#464555] hover:text-[#121c2a] hover:bg-[#dee9fc]/60 rounded-xl transition-colors cursor-pointer"
             type="button"
             aria-label="Toggle Navigation"
           >
             <IconMenu className="w-5 h-5" />
           </button>
           <Link to="/app" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#3525cd] flex items-center justify-center text-white shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-[#3525cd] flex items-center justify-center text-white shadow-sm shrink-0">
               <IconSchool className="w-4 h-4" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-[#121c2a]">
+            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#121c2a] xs:inline-block">
               StudySync
-            </span>
-            <span className="px-1.5 py-0.5 rounded-md bg-[#e2dfff] text-[#3525cd] text-[10px] font-bold">
-              SATMS
             </span>
           </Link>
         </div>
 
-        {/* Global Search Bar */}
-        <div className="flex-1 max-w-xl hidden sm:block">
-          <div
-            onClick={() => navigate("/app/chat")}
-            className="relative flex items-center w-full cursor-pointer"
-          >
-            <span className="absolute left-3.5 text-[#777587]">
-              <IconSparkle className="w-4 h-4" />
-            </span>
-            <input
-              readOnly
-              className="w-full h-10 pl-10 pr-4 bg-[#eff4ff]/70 text-[#121c2a] placeholder:text-[#777587] rounded-xl text-xs focus:outline-none cursor-pointer hover:bg-[#eff4ff] transition-all"
-              placeholder="Ask Ace AI or search across tasks, notes, books, PYQs..."
-            />
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-3 justify-end min-w-[200px] relative">
+        {/* Right: Notification Center & Profile Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-3 justify-end shrink-0 relative">
+          {/* Toggle Insights (Dashboard Only) */}
           {showInsightsToggle && onToggleInsights && (
             <button
               onClick={onToggleInsights}
-              className="px-3 py-1.5 text-[#464555] hover:text-[#121c2a] hover:bg-[#dee9fc] rounded-xl text-xs font-semibold transition-colors hidden md:block cursor-pointer"
+              className="px-3 py-1.5 text-[#464555] hover:text-[#121c2a] hover:bg-[#eff4ff] rounded-xl text-xs font-semibold transition-colors hidden xl:block cursor-pointer"
               type="button"
             >
               {isInsightsOpen ? "Hide Insights" : "Show Insights"}
             </button>
           )}
 
-          {/* Interactive Notifications Bell */}
+          {/* Notifications Bell */}
           <div className="relative">
             <button
               onClick={() => setShowNotifMenu(!showNotifMenu)}
               aria-label="Notifications"
-              className="relative p-2 text-[#464555] hover:bg-[#dee9fc] rounded-xl transition-colors cursor-pointer"
+              className="relative p-2 text-[#464555] hover:bg-[#eff4ff] rounded-xl transition-colors cursor-pointer"
               type="button"
             >
               <IconBell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#ba1a1a] text-white text-[10px] font-bold">
+                <span className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#ba1a1a] text-white text-[9px] font-bold">
                   {unreadCount}
                 </span>
               )}
             </button>
 
-            {/* Notifications Dropdown (Module 10) */}
+            {/* Notification Dropdown Drawer */}
             {showNotifMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-[#dee9fc] p-4 z-50 space-y-3">
+              <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-[#dee9fc] p-3 sm:p-4 z-50 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-[#dee9fc]/70">
                   <h4 className="text-xs font-bold text-[#121c2a]">
                     Notification Center
@@ -126,7 +107,7 @@ export default function Header({
                   )}
                 </div>
 
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                   {notifications.length === 0 ? (
                     <p className="text-[11px] text-gray-400 py-4 text-center">
                       No notifications.
@@ -153,7 +134,7 @@ export default function Header({
                             {n.title}
                           </span>
                           {!n.is_read && (
-                            <span className="w-2 h-2 rounded-full bg-[#3525cd]"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#3525cd]"></span>
                           )}
                         </div>
                         <p className="text-[11px] mt-1 font-normal leading-snug">
@@ -167,14 +148,30 @@ export default function Header({
             )}
           </div>
 
-          {/* Profile Avatar */}
-          <Link to="/app/profile" className="flex items-center gap-2 pl-1">
-            <div className="w-8 h-8 rounded-full bg-[#3525cd] flex items-center justify-center text-white text-xs font-bold shadow-xs">
+          {/* User Profile Avatar */}
+          <Link to="/app/profile" className="flex items-center gap-1.5 pl-1">
+            <div className="w-8 h-8 rounded-full bg-[#3525cd] flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0">
               {initials}
             </div>
           </Link>
         </div>
       </div>
+
+      {/* Expandable Mobile Search Drawer */}
+      {showMobileSearch && (
+        <div className="p-3 bg-white border-b border-[#dee9fc] md:hidden">
+          <div
+            onClick={() => {
+              setShowMobileSearch(false);
+              navigate("/app/chat");
+            }}
+            className="flex items-center gap-2 p-2 bg-[#eff4ff] rounded-xl text-xs cursor-pointer text-gray-600"
+          >
+            <IconSparkle className="w-4 h-4 text-[#3525cd]" />
+            <span>Search tasks, questions, or formulas...</span>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
