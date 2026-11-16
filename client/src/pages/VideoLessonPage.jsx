@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 export default function VideoLessonPage() {
   const navigate = useNavigate();
-
   const [activeStep, setActiveStep] = useState(2);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeTab, setActiveTab] = useState(3);
@@ -101,7 +100,7 @@ export default function VideoLessonPage() {
                 onClick={() => setIsPlaying(!isPlaying)}
                 className="w-14 h-14 rounded-full bg-[#3525cd]/90 text-white flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-all z-10"
               >
-                {isPlaying ? "❚❚" : "▶"}
+                {isPlaying ? "⏸" : "▶"}
               </button>
             </div>
 

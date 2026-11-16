@@ -9,6 +9,7 @@ import {
   IconSparkle,
   IconCalendar,
   IconFileText,
+  IconPlayCircle,
 } from "../common/Icons";
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { label: "Assignments", to: "/app/assignments", icon: IconFileText },
   { label: "Resource Library", to: "/app/books", icon: IconBook },
   { label: "Practice Tests", to: "/app/tests", icon: IconQuiz },
+  { label: "Video Lessons", to: "/app/videos", icon: IconPlayCircle },
 ];
 
 export default function LeftSidebar({ isOpen, onClose }) {
@@ -31,7 +33,7 @@ export default function LeftSidebar({ isOpen, onClose }) {
       }`}
     >
       <div className="w-64 h-full flex flex-col justify-between px-3">
-        {/* Navigation list */}
+        {/* Navigation links */}
         <nav className="space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -56,7 +58,7 @@ export default function LeftSidebar({ isOpen, onClose }) {
           })}
         </nav>
 
-        {/* Footer profile link */}
+        {/* Profile Settings Link */}
         <div className="pt-3 border-t border-[#dee9fc]/60 space-y-1">
           <NavLink
             to="/app/profile"

@@ -8,7 +8,6 @@ export function ProtectedRoute() {
   const location = useLocation();
 
   if (!isAuthenticated && !token) {
-    // Redirect unauthenticated visitors to login, preserving intended path
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -20,7 +19,6 @@ export function PublicRoute() {
   const { isAuthenticated, token } = useSelector((state) => state.auth);
 
   if (isAuthenticated && token) {
-    // Redirect authenticated users away from login/register to dashboard
     return <Navigate to="/app" replace />;
   }
 

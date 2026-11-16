@@ -136,7 +136,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Responsive Horizontal Scroll Container */}
         <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-3 pt-1 scrollbar-thin scrollbar-thumb-gray-200">
           {tasks.map((task) => (
             <div
@@ -270,7 +269,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Responsive Deadline Modal */}
+      {/* Deadline Modal */}
       {selectedTask && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-sm w-full space-y-4 shadow-xl border border-[#dee9fc]">

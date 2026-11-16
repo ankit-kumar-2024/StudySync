@@ -10,6 +10,7 @@ const initialState = {
       status: "pending",
       grade: null,
       feedback: null,
+      file_url: null,
     },
     {
       id: "as-3002",
@@ -18,7 +19,9 @@ const initialState = {
       due_date: "3 Days ago",
       status: "graded",
       grade: "A- (92%)",
-      feedback: "Strong grasp on ligand field stability.",
+      feedback:
+        "Strong grasp on ligand field stability. Ensure proper units in thermodynamic calculations.",
+      file_url: "https://example.com/chem_coord.pdf",
     },
     {
       id: "as-3003",
@@ -28,6 +31,7 @@ const initialState = {
       status: "submitted",
       grade: "Awaiting Review",
       feedback: null,
+      file_url: "https://example.com/math_hw4.pdf",
     },
   ],
 };
@@ -42,6 +46,7 @@ const assignmentsSlice = createSlice({
       if (item) {
         item.status = "submitted";
         item.file_url = file_url;
+        item.grade = "Under Review";
       }
     },
   },

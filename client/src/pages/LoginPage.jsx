@@ -14,7 +14,6 @@ export default function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     dispatch(
       loginSuccess({
         user: {
@@ -28,10 +27,8 @@ export default function LoginPage() {
           studyCenter: "07162P, M.E.R.I.T",
         },
         token: "demo-jwt-authenticated-token",
-      }),
+      })
     );
-
-    // Redirect to the originally requested route or the dashboard
     navigate(from, { replace: true });
   };
 

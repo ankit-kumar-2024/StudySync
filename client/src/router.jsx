@@ -16,7 +16,7 @@ import TasksPage from "./pages/TasksPage";
 import BooksPage from "./pages/BooksPage";
 import TestsPage from "./pages/TestsPage";
 import ChatPage from "./pages/ChatPage";
-import ProfilePage from "./pages/ProfilesettingsPage";
+import ProfilePage from "./pages/ProfileSettingsPage";
 import StudyPlannerPage from "./pages/StudyPlannerPage";
 import AssignmentsPage from "./pages/AssignmentsPage";
 import VideoLessonPage from "./pages/VideoLessonPage";
@@ -27,8 +27,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Welcome />,
   },
-
-  // 2. Guest-Only Public Routes (Redirect to /app if already logged in)
+  // 2. Guest-Only Public Routes
   {
     element: <PublicRoute />,
     children: [
@@ -42,8 +41,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
-  // 3. Private Protected Routes (Redirect to /login if not authenticated)
+  // 3. Private Protected Routes
   {
     path: "/app",
     element: <ProtectedRoute />,
@@ -91,10 +89,9 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
   // 4. Wildcard Catch-All Route
   {
     path: "*",
-    element: <Navigate to="/" replace />,
+    element: <Navigate to="/login" replace />,
   },
 ]);

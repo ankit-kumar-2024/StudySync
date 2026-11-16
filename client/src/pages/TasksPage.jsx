@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  IconChecklist,
-  IconClock,
-  IconCheck,
-} from "../components/common/Icons";
+import { IconClock, IconCheck } from "../components/common/Icons";
 import {
   addTask,
   deleteTask,
@@ -75,8 +71,7 @@ export default function TasksPage() {
             Academic Task Manager
           </h1>
           <p className="text-xs text-[#464555]">
-            Track, prioritize, and submit academic workloads across
-            subjects[cite: 14].
+            Track, prioritize, and submit academic workloads across subjects.
           </p>
         </div>
         <button
@@ -87,7 +82,7 @@ export default function TasksPage() {
         </button>
       </div>
 
-      {/* Filter and Search Bar: Fully responsive flex wrap */}
+      {/* Filter and Search Bar */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#dee9fc] shadow-xs space-y-3">
         <div className="flex flex-col lg:flex-row gap-2.5 sm:gap-3">
           <input
@@ -134,7 +129,7 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Task Grid: Responsive breakpoints */}
+      {/* Task Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {filteredTasks.length === 0 ? (
           <div className="col-span-full p-8 sm:p-12 text-center bg-white rounded-2xl border border-[#dee9fc] text-xs text-gray-400">
@@ -221,7 +216,7 @@ export default function TasksPage() {
         )}
       </div>
 
-      {/* Task Creation Modal: Viewport Scroll Safe */}
+      {/* Task Creation Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-[#dee9fc] max-h-[90vh] overflow-y-auto">

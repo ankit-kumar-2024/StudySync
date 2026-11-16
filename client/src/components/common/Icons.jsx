@@ -1,9 +1,5 @@
 import React from "react";
 
-// ==========================================
-// Navigation & Core App Icons
-// ==========================================
-
 export const IconSearch = ({ className = "w-5 h-5" }) => (
   <svg
     className={className}
@@ -190,10 +186,6 @@ export const IconSettings = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
-// ==========================================
-// Status, Utilities & Indicators
-// ==========================================
-
 export const IconFire = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 23c4.97 0 9-4.03 9-9 0-1.23-.27-2.4-.74-3.47-.2-.45-.77-.55-1.1-.18l-1.44 1.6c-.3.33-.82.32-1.13-.01l-1.83-1.9c-.34-.36-.93-.35-1.27.02L11.2 12.4c-.33.37-.9.39-1.26.05l-.9-.86c-.35-.34-.93-.3-1.24.09L5.24 14.5c-.19.24-.53.22-.7-.03A8.96 8.96 0 0 0 3 14c0 4.97 4.03 9 9 9z" />
@@ -302,20 +294,6 @@ export const IconArrowLeft = ({ className = "w-5 h-5" }) => (
   >
     <line x1="19" y1="12" x2="5" y2="12" />
     <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-
-export const IconChevronDown = ({ className = "w-5 h-5" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 

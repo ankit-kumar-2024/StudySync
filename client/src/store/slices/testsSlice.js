@@ -35,8 +35,13 @@ const initialState = {
       total_marks: 100,
       percentage: 82,
       time_taken: 38,
-      weak_topics: ["Indefinite Integration Substitution", "Limits at Infinity"],
-      attempted_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+      weak_topics: [
+        "Indefinite Integration Substitution",
+        "Limits at Infinity",
+      ],
+      attempted_at: new Date(
+        Date.now() - 1000 * 60 * 60 * 24 * 2,
+      ).toISOString(),
     },
   ],
 };

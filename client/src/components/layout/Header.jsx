@@ -28,6 +28,7 @@ export default function Header({
 
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [mobileQuery, setMobileQuery] = useState("");
 
   const initials = user?.name
     ? user.name
@@ -37,6 +38,22 @@ export default function Header({
         .substring(0, 2)
         .toUpperCase()
     : "SR";
+
+  const handleMobileSearch = (e) => {
+    e.preventDefault();
+    if (!mobileQuery.trim()) return;
+    setShowMobileSearch(false);
+    navigate(`/app/chat?prompt=${encodeURIComponent(mobileQuery)}`);
+    setMobileQuery("");
+  };
+
+  const handleNotificationClick = (item) => {
+    dispatch(markAsRead(item.id));
+    setShowNotifMenu(false);
+    if (item.type === "deadline") navigate("/app/tasks");
+    else if (item.type === "ai_tip") navigate("/app/tests");
+    else if (item.type === "graded") navigate("/app/assignments");
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 z-50 bg-white/90 backdrop-blur-xl shadow-xs border-b border-[#dee9fc]/70">
@@ -55,15 +72,45 @@ export default function Header({
             <div className="w-8 h-8 rounded-xl bg-[#3525cd] flex items-center justify-center text-white shadow-sm shrink-0">
               <IconSchool className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#121c2a] xs:inline-block">
+            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#121c2a] hidden xs:inline-block">
               StudySync
+            </span>
+            <span className="px-1.5 py-0.5 rounded-md bg-[#e2dfff] text-[#3525cd] text-[9px] font-bold">
+              SATMS
             </span>
           </Link>
         </div>
 
-        {/* Right: Notification Center & Profile Controls */}
+        {/* Center: Global Search Bar */}
+        <div className="flex-1 max-w-xl mx-2 hidden md:block">
+          <div
+            onClick={() => navigate("/app/chat")}
+            className="relative flex items-center w-full cursor-pointer group"
+          >
+            <span className="absolute left-3.5 text-[#777587] group-hover:text-[#3525cd] transition-colors">
+              <IconSparkle className="w-4 h-4" />
+            </span>
+            <input
+              readOnly
+              className="w-full h-10 pl-10 pr-4 bg-[#eff4ff]/80 text-[#121c2a] placeholder:text-[#777587] rounded-xl text-xs focus:outline-none cursor-pointer hover:bg-[#eff4ff] transition-all"
+              placeholder="Ask Ace AI or search across tasks, notes, books, PYQs..."
+            />
+          </div>
+        </div>
+
+        {/* Right: Controls */}
         <div className="flex items-center gap-1.5 sm:gap-3 justify-end shrink-0 relative">
-          {/* Toggle Insights (Dashboard Only) */}
+          {/* Mobile search trigger */}
+          <button
+            onClick={() => setShowMobileSearch(!showMobileSearch)}
+            className="p-2 text-[#464555] hover:bg-[#eff4ff] rounded-xl md:hidden cursor-pointer"
+            aria-label="Search"
+            type="button"
+          >
+            <IconSearch className="w-5 h-5" />
+          </button>
+
+          {/* Toggle Insights on Dashboard */}
           {showInsightsToggle && onToggleInsights && (
             <button
               onClick={onToggleInsights}
@@ -74,7 +121,7 @@ export default function Header({
             </button>
           )}
 
-          {/* Notifications Bell */}
+          {/* Notifications Center Popover */}
           <div className="relative">
             <button
               onClick={() => setShowNotifMenu(!showNotifMenu)}
@@ -90,7 +137,6 @@ export default function Header({
               )}
             </button>
 
-            {/* Notification Dropdown Drawer */}
             {showNotifMenu && (
               <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-[#dee9fc] p-3 sm:p-4 z-50 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-[#dee9fc]/70">
@@ -116,7 +162,7 @@ export default function Header({
                     notifications.map((n) => (
                       <div
                         key={n.id}
-                        onClick={() => dispatch(markAsRead(n.id))}
+                        onClick={() => handleNotificationClick(n)}
                         className={`p-2.5 rounded-xl text-xs border cursor-pointer transition-all ${
                           n.is_read
                             ? "bg-[#f8f9ff] border-gray-100 text-gray-500"
@@ -148,7 +194,7 @@ export default function Header({
             )}
           </div>
 
-          {/* User Profile Avatar */}
+          {/* Profile Avatar */}
           <Link to="/app/profile" className="flex items-center gap-1.5 pl-1">
             <div className="w-8 h-8 rounded-full bg-[#3525cd] flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0">
               {initials}
@@ -157,20 +203,27 @@ export default function Header({
         </div>
       </div>
 
-      {/* Expandable Mobile Search Drawer */}
+      {/* Expandable Mobile Search Bar */}
       {showMobileSearch && (
-        <div className="p-3 bg-white border-b border-[#dee9fc] md:hidden">
-          <div
-            onClick={() => {
-              setShowMobileSearch(false);
-              navigate("/app/chat");
-            }}
-            className="flex items-center gap-2 p-2 bg-[#eff4ff] rounded-xl text-xs cursor-pointer text-gray-600"
+        <form
+          onSubmit={handleMobileSearch}
+          className="p-3 bg-white border-b border-[#dee9fc] md:hidden flex gap-2"
+        >
+          <input
+            type="text"
+            value={mobileQuery}
+            onChange={(e) => setMobileQuery(e.target.value)}
+            placeholder="Search tasks, formulas, PYQs..."
+            className="flex-1 px-3 py-2 bg-[#f8f9ff] border border-[#dee9fc] rounded-xl text-xs focus:outline-none"
+            autoFocus
+          />
+          <button
+            type="submit"
+            className="px-3 py-2 bg-[#3525cd] text-white rounded-xl text-xs font-bold"
           >
-            <IconSparkle className="w-4 h-4 text-[#3525cd]" />
-            <span>Search tasks, questions, or formulas...</span>
-          </div>
-        </div>
+            Search
+          </button>
+        </form>
       )}
     </header>
   );

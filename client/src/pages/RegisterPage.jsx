@@ -7,7 +7,6 @@ import { loginSuccess } from "../store/slices/authSlice";
 export default function RegisterPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",

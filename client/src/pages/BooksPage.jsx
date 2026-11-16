@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  IconBook,
-  IconSparkle,
-  IconCheck,
-} from "../components/common/Icons";
+import { IconBook } from "../components/common/Icons";
 import { addResource, setResourceFilter } from "../store/slices/resourcesSlice";
 
 export default function BooksPage() {
@@ -14,7 +10,6 @@ export default function BooksPage() {
 
   const [previewItem, setPreviewItem] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
-
   const [newDoc, setNewDoc] = useState({
     title: "",
     file_type: "PYQ",
@@ -35,10 +30,30 @@ export default function BooksPage() {
         id: `r-${Date.now()}`,
         ...newDoc,
         exam_year: 2024,
-      })
+      }),
     );
     setShowUploadModal(false);
-    setNewDoc({ title: "", file_type: "PYQ", subject: "Mathematics", size: "3.5 MB" });
+    setNewDoc({
+      title: "",
+      file_type: "PYQ",
+      subject: "Mathematics",
+      size: "3.5 MB",
+    });
+  };
+
+  const handleDownloadSimulation = (title) => {
+    const element = document.createElement("a");
+    const file = new Blob(
+      [`SATMS Vault Resource: ${title}\nVerified Academic Notes`],
+      {
+        type: "text/plain",
+      },
+    );
+    element.href = URL.createObjectURL(file);
+    element.download = `${title.replace(/\s+/g, "_")}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   return (
@@ -46,9 +61,12 @@ export default function BooksPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Resource & PYQ Library</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Resource & PYQ Library
+          </h1>
           <p className="text-xs text-[#464555]">
-            Access textbooks, previous year questions, and curated chapter notes.
+            Access textbooks, previous year questions, and curated chapter
+            notes.
           </p>
         </div>
         <button
@@ -76,12 +94,12 @@ export default function BooksPage() {
         ))}
       </div>
 
-      {/* Resources Grid */}
+      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {filteredItems.map((item) => (
           <div
             key={item.id}
-            className="p-5 bg-white rounded-2xl border border-[#dee9fc] shadow-xs flex flex-col justify-between space-y-3"
+            className="p-5 bg-white rounded-2xl border border-[#dee9fc] shadow-xs flex flex-col justify-between space-y-3 hover:shadow-md transition-all"
           >
             <div className="space-y-2">
               <span className="px-2 py-0.5 rounded bg-[#eff4ff] text-[#3525cd] text-[10px] font-bold">
@@ -89,28 +107,39 @@ export default function BooksPage() {
               </span>
               <h3 className="text-xs font-bold leading-snug">{item.title}</h3>
               <p className="text-[10px] text-gray-500">
-                {item.subject} • {item.size} {item.exam_year ? `• Year ${item.exam_year}` : ""}
+                {item.subject} • {item.size}{" "}
+                {item.exam_year ? `• Year ${item.exam_year}` : ""}
               </p>
             </div>
-            <button
-              onClick={() => setPreviewItem(item)}
-              className="text-xs font-bold text-[#3525cd] hover:underline self-start cursor-pointer"
-            >
-              Preview Document
-            </button>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setPreviewItem(item)}
+                className="text-xs font-bold text-[#3525cd] hover:underline cursor-pointer"
+              >
+                Preview
+              </button>
+              <button
+                onClick={() => handleDownloadSimulation(item.title)}
+                className="text-xs font-bold text-gray-500 hover:text-[#121c2a] cursor-pointer"
+              >
+                Download
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Document In-App Preview Modal (Section 5.2 - PDF preview) */}
+      {/* Document In-App Preview Modal */}
       {previewItem && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl border border-[#dee9fc]">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
-                <h3 className="text-sm font-bold text-[#121c2a]">{previewItem.title}</h3>
+                <h3 className="text-sm font-bold text-[#121c2a]">
+                  {previewItem.title}
+                </h3>
                 <span className="text-[10px] text-gray-400">
-                  {previewItem.subject} • Read Mode
+                  {previewItem.subject} • Secure Document Vault
                 </span>
               </div>
               <button
@@ -129,16 +158,23 @@ export default function BooksPage() {
                 Document Viewer: {previewItem.title}
               </p>
               <p className="text-[11px] text-[#464555] max-w-sm">
-                Document parsed from secure Cloudinary storage with JWT authentication.
+                Document verified from secure storage with authenticated token
+                access.
               </p>
             </div>
 
-            <div className="flex justify-end gap-2 text-xs pt-2">
+            <div className="flex justify-between items-center pt-2">
+              <button
+                onClick={() => handleDownloadSimulation(previewItem.title)}
+                className="px-4 py-2 rounded-xl bg-[#eff4ff] text-[#3525cd] text-xs font-bold hover:bg-[#dee9fc] cursor-pointer"
+              >
+                Download Offline Copy
+              </button>
               <button
                 onClick={() => setPreviewItem(null)}
-                className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold text-xs cursor-pointer"
               >
-                Close Preview
+                Close
               </button>
             </div>
           </div>
@@ -149,26 +185,36 @@ export default function BooksPage() {
       {showUploadModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl border border-[#dee9fc]">
-            <h3 className="text-sm font-bold text-[#121c2a]">Upload Resource Material</h3>
+            <h3 className="text-sm font-bold text-[#121c2a]">
+              Upload Resource Material
+            </h3>
             <form onSubmit={handleUpload} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[#464555] font-semibold mb-1">Resource Title</label>
+                <label className="block text-[#464555] font-semibold mb-1">
+                  Resource Title
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. JEE Main 2024 Math PYQ"
                   value={newDoc.title}
-                  onChange={(e) => setNewDoc({ ...newDoc, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewDoc({ ...newDoc, title: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-[#f8f9ff] border border-[#dee9fc] rounded-xl focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#464555] font-semibold mb-1">Type</label>
+                  <label className="block text-[#464555] font-semibold mb-1">
+                    Type
+                  </label>
                   <select
                     value={newDoc.file_type}
-                    onChange={(e) => setNewDoc({ ...newDoc, file_type: e.target.value })}
+                    onChange={(e) =>
+                      setNewDoc({ ...newDoc, file_type: e.target.value })
+                    }
                     className="w-full px-3 py-2 bg-[#f8f9ff] border border-[#dee9fc] rounded-xl focus:outline-none"
                   >
                     <option value="PYQ">PYQ</option>
@@ -177,10 +223,14 @@ export default function BooksPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[#464555] font-semibold mb-1">Subject</label>
+                  <label className="block text-[#464555] font-semibold mb-1">
+                    Subject
+                  </label>
                   <select
                     value={newDoc.subject}
-                    onChange={(e) => setNewDoc({ ...newDoc, subject: e.target.value })}
+                    onChange={(e) =>
+                      setNewDoc({ ...newDoc, subject: e.target.value })
+                    }
                     className="w-full px-3 py-2 bg-[#f8f9ff] border border-[#dee9fc] rounded-xl focus:outline-none"
                   >
                     <option value="Mathematics">Mathematics</option>

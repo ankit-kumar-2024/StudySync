@@ -125,7 +125,7 @@ export default function TestsPage() {
         </div>
       </div>
 
-      {/* Quiz Area: Stacks on mobile */}
+      {/* Quiz Area */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         <div className="lg:col-span-8 bg-white p-4 sm:p-6 rounded-2xl border border-[#dee9fc] space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
