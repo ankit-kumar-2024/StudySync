@@ -7,7 +7,6 @@ import {
   Sparkles,
   Bell,
   Search,
-  PanelRight,
   Command,
 } from "lucide-react";
 import {
@@ -15,12 +14,7 @@ import {
   markAllAsRead,
 } from "../../store/slices/notificationsSlice";
 
-export default function Header({
-  onToggleSidebar,
-  onToggleInsights,
-  isInsightsOpen,
-  showInsightsToggle,
-}) {
+export default function Header({ onToggleSidebar }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -115,17 +109,6 @@ export default function Header({
           >
             <Search className="w-5 h-5" />
           </button>
-
-          {showInsightsToggle && onToggleInsights && (
-            <button
-              onClick={onToggleInsights}
-              className="px-3 py-1.5 text-slate-300 hover:text-white bg-[#121929] hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold transition-all hidden xl:inline-flex items-center gap-1.5 cursor-pointer"
-              type="button"
-            >
-              <PanelRight className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{isInsightsOpen ? "Hide Insights" : "Insights"}</span>
-            </button>
-          )}
 
           {/* Notifications Dropdown */}
           <div className="relative">

@@ -3,7 +3,6 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import Header from "./Header";
 import LeftSidebar from "./LeftSidebar";
-import RightSidebar from "./RightSidebar";
 import Footer from "./Footer";
 import { setTasks } from "../../store/slices/tasksSlice";
 import { setAssignments } from "../../store/slices/assignmentsSlice";
@@ -13,7 +12,6 @@ import { setFullSchedule } from "../../store/slices/plannerSlice";
 
 export default function AppLayout() {
   const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
   const location = useLocation();
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
@@ -38,10 +36,8 @@ export default function AppLayout() {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setLeftOpen(true);
-        setRightOpen(true);
       } else {
         setLeftOpen(false);
-        setRightOpen(false);
       }
     };
     handleResize();
@@ -53,9 +49,6 @@ export default function AppLayout() {
     if (window.innerWidth < 1024) setLeftOpen(false);
   }, [location.pathname]);
 
-  const isDashboard =
-    location.pathname === "/app" || location.pathname === "/app/";
-
   return (
     <div className="bg-[#070A11] text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white relative">
       {/* Subtle ambient background glow */}
@@ -64,12 +57,7 @@ export default function AppLayout() {
         <div className="absolute top-1/2 -right-24 w-[30rem] h-[30rem] rounded-full bg-cyan-500/[0.05] blur-[110px]" />
       </div>
 
-      <Header
-        onToggleSidebar={() => setLeftOpen(!leftOpen)}
-        onToggleInsights={isDashboard ? () => setRightOpen(!rightOpen) : null}
-        isInsightsOpen={isDashboard && rightOpen}
-        showInsightsToggle={isDashboard}
-      />
+      <Header onToggleSidebar={() => setLeftOpen(!leftOpen)} />
 
       {leftOpen && (
         <div
@@ -81,14 +69,10 @@ export default function AppLayout() {
 
       <LeftSidebar isOpen={leftOpen} onClose={() => setLeftOpen(false)} />
 
-      {isDashboard && (
-        <RightSidebar isOpen={rightOpen} onClose={() => setRightOpen(false)} />
-      )}
-
       <div
         className={`relative z-10 flex-1 transition-all duration-300 ease-out ${
           leftOpen ? "lg:pl-64" : "pl-0"
-        } ${isDashboard && rightOpen ? "xl:pr-80" : "pr-0"}`}
+        }`}
       >
         <main className="pt-16 min-h-screen flex flex-col justify-between">
           <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 min-w-0">
