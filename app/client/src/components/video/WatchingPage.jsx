@@ -14,6 +14,18 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+// Extract a valid 11-character YouTube video ID from any URL, ID, or fallback cleanly
+function extractYouTubeId(rawId) {
+  if (!rawId) return "Oe421EPjeBE";
+  const str = String(rawId).trim();
+  const urlMatch = str.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  );
+  if (urlMatch) return urlMatch[1];
+  if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+  return "Oe421EPjeBE";
+}
+
 export default function WatchingPage({
   video,
   recommendedVideos = [],
@@ -39,14 +51,16 @@ export default function WatchingPage({
 
   if (!video) return null;
 
-  const embedId = video.youtubeId || video.id;
+  const embedId = extractYouTubeId(video.youtubeId || video.id);
   const instructorName =
     video.channelTitle || video.instructor || "Sync AI Instructor";
   const isSaved = savedIds.includes(video.id);
 
   const queueVideos = [
     video,
-    ...recommendedVideos.filter((v) => (v.youtubeId || v.id) !== embedId),
+    ...recommendedVideos.filter(
+      (v) => extractYouTubeId(v.youtubeId || v.id) !== embedId,
+    ),
   ];
 
   const handleAddNote = (e) => {
@@ -60,9 +74,10 @@ export default function WatchingPage({
   if (activePdf) {
     return (
       <div className="space-y-4">
-        <div className="bg-[#121824] border border-slate-800 rounded-2xl px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-[#0F1624] border border-slate-800 rounded-2xl px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
+              type="button"
               onClick={() => setActivePdf(null)}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition shrink-0 cursor-pointer"
             >
@@ -83,6 +98,7 @@ export default function WatchingPage({
           <div className="flex items-center gap-2">
             {onDownloadCustomPdf && activePdf.courseData ? (
               <button
+                type="button"
                 onClick={() => onDownloadCustomPdf(activePdf)}
                 className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white inline-flex items-center gap-1.5 cursor-pointer"
               >
@@ -104,14 +120,14 @@ export default function WatchingPage({
         </div>
 
         {activePdf.courseData ? (
-          <div className="bg-[#121824] border border-slate-800 rounded-2xl p-6 space-y-5">
+          <div className="bg-[#0F1624] border border-slate-800 rounded-2xl p-6 space-y-5">
             <p className="text-xs text-slate-400">
               {activePdf.courseData.overview}
             </p>
             {activePdf.courseData.modules.map((mod, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-[#0B0F17] border border-slate-800 space-y-3"
+                className="p-5 rounded-2xl bg-[#070A11] border border-slate-800 space-y-3"
               >
                 <h3 className="text-base font-bold text-indigo-400">
                   Topic {idx + 1}: {mod.moduleTitle}
@@ -145,8 +161,9 @@ export default function WatchingPage({
 
   return (
     <div className="space-y-5">
-      <div className="bg-[#121824]/95 border border-slate-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
+      <div className="bg-[#0F1624]/95 border border-slate-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
         <button
+          type="button"
           onClick={onBack}
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition cursor-pointer"
         >
@@ -161,17 +178,33 @@ export default function WatchingPage({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT 7 COLUMNS: Video Player + Metadata + Books + Scratchpad */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl">
-            <iframe
-              className="w-full h-full"
-              src={`https://www.youtube-nocookie.com/embed/${embedId}?autoplay=1&rel=0`}
-              title={video.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+          <div className="space-y-2">
+            <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl">
+              <iframe
+                key={embedId}
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${embedId}?autoplay=1&rel=0&origin=${window.location.origin}`}
+                title={video.title}
+                referrerPolicy="strict-origin-when-cross-origin"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+
+            <div className="flex items-center justify-between px-1 text-[11px] text-slate-400">
+              <span>Playback restricted by video owner?</span>
+              <a
+                href={`https://www.youtube.com/watch?v=${embedId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-400 hover:underline font-semibold inline-flex items-center gap-1"
+              >
+                Watch directly on YouTube <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
 
-          <div className="bg-[#121824] border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div className="bg-[#0F1624] border border-slate-800 rounded-2xl p-5 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-400 font-semibold">
@@ -212,6 +245,7 @@ export default function WatchingPage({
 
               {onToggleSave && (
                 <button
+                  type="button"
                   onClick={() => onToggleSave(video.id)}
                   className={`shrink-0 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition cursor-pointer ${
                     isSaved
@@ -236,6 +270,7 @@ export default function WatchingPage({
               </p>
               {video.description?.length > 140 && (
                 <button
+                  type="button"
                   onClick={() => setDescExpanded(!descExpanded)}
                   className="mt-1.5 text-xs text-indigo-400 font-semibold hover:underline cursor-pointer"
                 >
@@ -246,7 +281,7 @@ export default function WatchingPage({
           </div>
 
           {relatedBooks.length > 0 && (
-            <div className="bg-[#121824] border border-slate-800 rounded-2xl p-5 space-y-3">
+            <div className="bg-[#0F1624] border border-slate-800 rounded-2xl p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-indigo-400" />
                 <h2 className="text-sm font-bold text-white">
@@ -285,7 +320,7 @@ export default function WatchingPage({
             </div>
           )}
 
-          <div className="bg-[#121824] border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div className="bg-[#0F1624] border border-slate-800 rounded-2xl p-5 space-y-3">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-cyan-400" />
               Lesson Scratchpad & Key Takeaways
@@ -320,7 +355,7 @@ export default function WatchingPage({
 
         {/* RIGHT 5 COLUMNS: Recommended Videos + Topic PDF Books */}
         <aside className="lg:col-span-5 space-y-5">
-          <div className="bg-[#121824] border border-slate-800 rounded-2xl p-4 space-y-3">
+          <div className="bg-[#0F1624] border border-slate-800 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <PlayCircle className="w-4 h-4 text-cyan-400" />
@@ -335,7 +370,7 @@ export default function WatchingPage({
 
             <div className="space-y-2.5">
               {queueVideos.map((vid) => {
-                const vidEmbedId = vid.youtubeId || vid.id;
+                const vidEmbedId = extractYouTubeId(vid.youtubeId || vid.id);
                 const isCurrent = vidEmbedId === embedId;
                 return (
                   <div
@@ -387,7 +422,7 @@ export default function WatchingPage({
           </div>
 
           {relatedPdfs.length > 0 && (
-            <div className="bg-[#121824] border border-slate-800 rounded-2xl p-4 space-y-3">
+            <div className="bg-[#0F1624] border border-slate-800 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-emerald-400" />
