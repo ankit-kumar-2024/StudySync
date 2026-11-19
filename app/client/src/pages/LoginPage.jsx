@@ -62,7 +62,7 @@ export default function LoginPage() {
               Welcome back
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              Sign in to access Sync AI, your PDF courses & 50-Q practice tests
+              Sign in to access Sync AI, your PDF courses & practice tests
             </p>
           </div>
         </div>
