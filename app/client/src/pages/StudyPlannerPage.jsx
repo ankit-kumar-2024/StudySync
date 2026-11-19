@@ -34,7 +34,6 @@ export default function StudyPlannerPage() {
   const testHistory = useSelector((state) => state.tests.history);
   const resources = useSelector((state) => state.resources.items);
 
-  // Filter all saved AI / Video Courses
   const savedCourses = resources.filter(
     (r) => r.file_type?.toLowerCase() === "course" || r.courseData,
   );
@@ -43,16 +42,14 @@ export default function StudyPlannerPage() {
   const [activePomodoro, setActivePomodoro] = useState(false);
   const [pomodoroSeconds, setPomodoroSeconds] = useState(25 * 60);
   const [successBanner, setSuccessBanner] = useState("");
-  const [courseFilter, setCourseFilter] = useState("all"); // all | in-progress | completed
+  const [courseFilter, setCourseFilter] = useState("all");
 
-  // Deadline Modal State
   const [editingCourse, setEditingCourse] = useState(null);
   const [deadlineInput, setDeadlineInput] = useState("");
 
-  const targetExam = user?.exam_target || "JEE Advanced";
+  const targetExam = user?.exam_target || "Your Target Exam";
   const dailyGoalHours = user?.daily_goal_hours || 5;
 
-  // Pomodoro Countdown
   useEffect(() => {
     let interval = null;
     if (activePomodoro && pomodoroSeconds > 0) {
@@ -69,17 +66,15 @@ export default function StudyPlannerPage() {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  // Compute completion stats for a saved course
   const getCourseStats = (course) => {
     const modules = course.courseData?.modules || [];
-    const total = modules.length || 4;
+    const total = modules.length || 1;
     const completedList = course.completedModules || [];
     const completedCount = completedList.length;
     const percent = Math.min(100, Math.round((completedCount / total) * 100));
     return { total, completedCount, percent, modules, completedList };
   };
 
-  // Format deadline status badge
   const getDeadlineInfo = (isoDate) => {
     if (!isoDate) {
       return {
@@ -88,7 +83,7 @@ export default function StudyPlannerPage() {
       };
     }
     const diffMs = new Date(isoDate).getTime() - Date.now();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(diffMs / 86400000);
     if (diffMs < 0) {
       return {
         label: `Overdue (${new Date(isoDate).toLocaleDateString()})`,
@@ -107,7 +102,6 @@ export default function StudyPlannerPage() {
     };
   };
 
-  // Toggle module completion & sync with MongoDB
   const handleToggleModule = async (course, moduleIndex) => {
     const current = course.completedModules || [];
     const updatedModules = current.includes(moduleIndex)
@@ -116,7 +110,7 @@ export default function StudyPlannerPage() {
 
     dispatch(toggleCourseModule({ courseId: course.id, moduleIndex }));
 
-    if (token && !String(course.id).startsWith("r-")) {
+    if (token) {
       await fetch(`http://localhost:5000/api/resources/${course.id}/progress`, {
         method: "PATCH",
         headers: {
@@ -128,7 +122,6 @@ export default function StudyPlannerPage() {
     }
   };
 
-  // Save updated course deadline
   const handleSaveDeadline = async (e) => {
     e.preventDefault();
     if (!editingCourse || !deadlineInput) return;
@@ -141,7 +134,7 @@ export default function StudyPlannerPage() {
       }),
     );
 
-    if (token && !String(editingCourse.id).startsWith("r-")) {
+    if (token) {
       await fetch(
         `http://localhost:5000/api/resources/${editingCourse.id}/progress`,
         {
@@ -157,11 +150,10 @@ export default function StudyPlannerPage() {
 
     setEditingCourse(null);
     setDeadlineInput("");
-    setSuccessBanner("Course target deadline updated.");
+    setSuccessBanner("Course deadline updated.");
     setTimeout(() => setSuccessBanner(""), 3500);
   };
 
-  // Sync AI Timetable Generation (Prioritizes Weak Quiz Topics + Pending Course Modules)
   const handleGenerateAIPlan = async () => {
     setIsGenerating(true);
     const detectedWeakSpots = testHistory.flatMap((h) => h.weak_topics || []);
@@ -170,7 +162,7 @@ export default function StudyPlannerPage() {
       .map((c) => c.title);
 
     const priorityTopics = [...detectedWeakSpots, ...pendingCourses];
-    const primaryFocus = priorityTopics[0] || "Core Syllabus Modules";
+    const primaryFocus = priorityTopics[0] || "Your Sync AI Courses";
 
     try {
       const res = await fetch("http://localhost:5000/api/planner/generate", {
@@ -189,16 +181,41 @@ export default function StudyPlannerPage() {
       if (res.ok && data.days) {
         dispatch(setFullSchedule(data.days));
         setSuccessBanner(
-          `Sync AI recalibrated your timetable for ${targetExam} prioritizing: ${primaryFocus}`,
+          `Sync AI recalibrated your timetable prioritizing: ${primaryFocus}`,
         );
-        setTimeout(() => setSuccessBanner(""), 5000);
+        setTimeout(() => setSuccessBanner(""), 4500);
       }
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Aggregate metrics across all saved courses
+  // Empty State when no courses or schedule slots exist yet
+  if (savedCourses.length === 0 && scheduleDays.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto py-16 text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center mx-auto">
+          <Calendar className="w-7 h-7" />
+        </div>
+        <h1 className="text-xl font-bold text-white">
+          Your Study Planner Is Empty
+        </h1>
+        <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+          Open <strong>Sync AI Agent</strong> and choose{" "}
+          <strong>Complete Course</strong> with a deadline—your course modules,
+          progress bars, and daily timetable will appear here automatically.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate("/app/chat")}
+          className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold inline-flex items-center gap-2 cursor-pointer"
+        >
+          <Sparkles className="w-4 h-4" /> Build Course & Timeline in Sync AI
+        </button>
+      </div>
+    );
+  }
+
   const overallCourseProgress =
     savedCourses.length === 0
       ? 0
@@ -214,7 +231,6 @@ export default function StudyPlannerPage() {
     return true;
   });
 
-  // Schedule slot completion rate
   const allSlots = scheduleDays.flatMap((d) => d.slots || []);
   const completedSlots = allSlots.filter(
     (s) => s.status === "completed",
@@ -225,8 +241,8 @@ export default function StudyPlannerPage() {
       : 0;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 font-sans text-slate-100 pb-14">
-      {/* 1. Sync AI Header Banner */}
+    <div className="max-w-6xl mx-auto space-y-8 text-slate-100 pb-14">
+      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-[#1e1b4b] via-[#312e81] to-[#1e1b4b] rounded-3xl border border-indigo-500/30 shadow-xl">
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-[11px] font-semibold">
@@ -237,20 +253,20 @@ export default function StudyPlannerPage() {
             Adaptive Study Planner & Course Progress
           </h1>
           <p className="text-xs text-indigo-200">
-            Target Exam: <strong>{targetExam}</strong> • Daily Goal:{" "}
-            <strong>{dailyGoalHours} Hours/Day</strong> •{" "}
-            <strong>{savedCourses.length} Saved Courses</strong>
+            <strong>{savedCourses.length} Saved Courses</strong> • Daily Goal:{" "}
+            <strong>{dailyGoalHours} Hours/Day</strong>
           </p>
         </div>
 
         <button
+          type="button"
           onClick={handleGenerateAIPlan}
           disabled={isGenerating}
-          className="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 self-start sm:self-auto flex items-center gap-2 cursor-pointer"
+          className="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold shadow-lg transition-all disabled:opacity-50 self-start sm:self-auto flex items-center gap-2 cursor-pointer"
         >
           <Sparkles className="w-4 h-4" />
           <span>
-            {isGenerating ? "Sync AI Planning..." : "Generate Sync AI Plan"}
+            {isGenerating ? "Recalibrating..." : "Recalibrate with Sync AI"}
           </span>
         </button>
       </div>
@@ -262,14 +278,13 @@ export default function StudyPlannerPage() {
         </div>
       )}
 
-      {/* 2. Top KPI Row: Course Completion + Pomodoro Timer + Schedule Adherence */}
+      {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Overall Saved Courses Progress */}
-        <div className="p-5 bg-[#121824] rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3">
+        <div className="p-5 bg-[#0F1624] rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
               <BookOpen className="w-4 h-4 text-cyan-400" />
-              <span>Course Syllabus Completion</span>
+              <span>Course Completion</span>
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
               {savedCourses.length} Courses
@@ -287,20 +302,16 @@ export default function StudyPlannerPage() {
               />
             </div>
           </div>
-          <p className="text-[11px] text-slate-400">
-            Check off modules below to update completion and deadlines.
-          </p>
         </div>
 
-        {/* Pomodoro Focus Sprint Widget */}
-        <div className="p-5 bg-[#121824] rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3">
+        <div className="p-5 bg-[#0F1624] rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
               <Timer className="w-4 h-4 text-indigo-400" />
-              <span>Study Sprint Timer</span>
+              <span>Focus Sprint Timer</span>
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300">
-              25m Focus
+              25m Sprint
             </span>
           </div>
           <div className="text-center py-1">
@@ -310,6 +321,7 @@ export default function StudyPlannerPage() {
           </div>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => setActivePomodoro(!activePomodoro)}
               className={`flex-1 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
                 activePomodoro
@@ -320,6 +332,7 @@ export default function StudyPlannerPage() {
               {activePomodoro ? "Pause" : "Start Sprint"}
             </button>
             <button
+              type="button"
               onClick={() => {
                 setActivePomodoro(false);
                 setPomodoroSeconds(25 * 60);
@@ -331,12 +344,11 @@ export default function StudyPlannerPage() {
           </div>
         </div>
 
-        {/* Timetable Adherence */}
-        <div className="p-5 bg-[#121824] rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3">
+        <div className="p-5 bg-[#0F1624] rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-400" />
-              <span>Timetable Adherence</span>
+              <span>Schedule Adherence</span>
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">
               {completedSlots}/{allSlots.length} Done
@@ -344,7 +356,7 @@ export default function StudyPlannerPage() {
           </div>
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold">
-              <span className="text-slate-400">Weekly Execution</span>
+              <span className="text-slate-400">Timeline Progress</span>
               <span className="text-emerald-400">{adherenceRate}%</span>
             </div>
             <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
@@ -354,71 +366,53 @@ export default function StudyPlannerPage() {
               />
             </div>
           </div>
-          <p className="text-[11px] text-slate-400">
-            Synced with your {targetExam} diagnostic test weak spots.
-          </p>
         </div>
       </div>
 
-      {/* 3. SAVED COURSES WITH DEADLINES & MODULE COMPLETION TRACKER */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-cyan-400" />
-              <span>Saved Courses & Deadline Tracker</span>
-            </h2>
-            <p className="text-xs text-slate-400">
-              Track module completion percentages, set target deadlines, and
-              jump into video lessons.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex bg-[#121824] p-1 rounded-xl border border-slate-800 text-xs">
-              {["all", "in-progress", "completed"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setCourseFilter(tab)}
-                  className={`px-3 py-1 rounded-lg font-semibold capitalize transition cursor-pointer ${
-                    courseFilter === tab
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+      {/* Saved Courses with Deadlines & Module Progress */}
+      {savedCourses.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-cyan-400" />
+                <span>Saved Courses & Deadline Tracker</span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Check off completed topics to track progress toward your
+                deadline.
+              </p>
             </div>
 
-            <button
-              onClick={() => navigate("/app/books")}
-              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>New Course</span>
-            </button>
-          </div>
-        </div>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-[#0F1624] p-1 rounded-xl border border-slate-800 text-xs">
+                {["all", "in-progress", "completed"].map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setCourseFilter(tab)}
+                    className={`px-3 py-1 rounded-lg font-semibold capitalize transition cursor-pointer ${
+                      courseFilter === tab
+                        ? "bg-indigo-600 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
 
-        {filteredCourses.length === 0 ? (
-          <div className="p-10 bg-[#121824] border border-slate-800 rounded-2xl text-center space-y-3">
-            <AlertCircle className="w-8 h-8 text-indigo-400 mx-auto" />
-            <h3 className="text-sm font-bold text-white">
-              No saved courses in this view
-            </h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Generate a structured AI course in the Resource Library to track
-              its deadline and module completion here.
-            </p>
-            <button
-              onClick={() => navigate("/app/books")}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white cursor-pointer"
-            >
-              Create AI Course →
-            </button>
+              <button
+                type="button"
+                onClick={() => navigate("/app/chat")}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Course</span>
+              </button>
+            </div>
           </div>
-        ) : (
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {filteredCourses.map((course) => {
               const { total, completedCount, percent, modules, completedList } =
@@ -428,13 +422,12 @@ export default function StudyPlannerPage() {
               return (
                 <div
                   key={course.id}
-                  className="bg-[#121824] border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-lg"
+                  className="bg-[#0F1624] border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-lg"
                 >
-                  {/* Top Metadata + Deadline Badge */}
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="px-2.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 text-[10px] font-bold uppercase">
-                        {course.subject || "Course"}
+                        Sync AI Course
                       </span>
 
                       <div className="flex items-center gap-1.5">
@@ -445,6 +438,7 @@ export default function StudyPlannerPage() {
                           {deadlineInfo.label}
                         </span>
                         <button
+                          type="button"
                           onClick={() => {
                             setEditingCourse(course);
                             setDeadlineInput(
@@ -455,8 +449,8 @@ export default function StudyPlannerPage() {
                                 : "",
                             );
                           }}
-                          className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
-                          title="Edit Course Deadline"
+                          className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                          title="Edit Deadline"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -474,11 +468,10 @@ export default function StudyPlannerPage() {
                       )}
                     </div>
 
-                    {/* Course Progress Bar */}
                     <div className="space-y-1.5 pt-1">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-400 font-medium">
-                          Completed {completedCount} of {total} Modules
+                          Completed {completedCount} of {total} Topics
                         </span>
                         <span
                           className={`font-bold ${
@@ -502,7 +495,6 @@ export default function StudyPlannerPage() {
                       </div>
                     </div>
 
-                    {/* Interactive Module Checklist */}
                     {modules.length > 0 && (
                       <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
                         {modules.map((mod, mIdx) => {
@@ -513,7 +505,7 @@ export default function StudyPlannerPage() {
                               className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs transition ${
                                 isChecked
                                   ? "bg-emerald-500/10 border-emerald-500/30 text-slate-300"
-                                  : "bg-slate-900/70 border-slate-800 text-slate-200"
+                                  : "bg-[#070A11] border-slate-800 text-slate-200"
                               }`}
                             >
                               <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0">
@@ -532,7 +524,7 @@ export default function StudyPlannerPage() {
                                       : ""
                                   }`}
                                 >
-                                  M{mIdx + 1}: {mod.moduleTitle}
+                                  Topic {mIdx + 1}: {mod.moduleTitle}
                                 </span>
                               </label>
 
@@ -561,101 +553,106 @@ export default function StudyPlannerPage() {
               );
             })}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* 4. DAY-BY-DAY ADAPTIVE STUDY SCHEDULE */}
-      <section className="space-y-4">
-        <h2 className="text-base sm:text-lg font-bold text-white">
-          Day-by-Day Study Timetable
-        </h2>
-        {scheduleDays.map((dayPlan, dayIdx) => (
-          <div
-            key={dayPlan.day}
-            className="bg-[#121824] rounded-2xl border border-slate-800 p-5 space-y-3"
-          >
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2.5">
-              <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-indigo-400" />
-                <span>{dayPlan.day}</span>
-              </h3>
-              <span className="text-[11px] text-slate-400 font-semibold">
-                {dayPlan.slots.length} Planned Sessions
-              </span>
-            </div>
+      {/* Day-by-Day Study Schedule */}
+      {scheduleDays.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-base sm:text-lg font-bold text-white">
+            Deadline-Based Study Timetable
+          </h2>
+          {scheduleDays.map((dayPlan, dayIdx) => (
+            <div
+              key={dayPlan.day}
+              className="bg-[#0F1624] rounded-2xl border border-slate-800 p-5 space-y-3"
+            >
+              <div className="flex justify-between items-center border-b border-slate-800 pb-2.5">
+                <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-indigo-400" />
+                  <span>{dayPlan.day}</span>
+                </h3>
+                <span className="text-[11px] text-slate-400 font-semibold">
+                  {dayPlan.slots.length} Planned Sessions
+                </span>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {dayPlan.slots.map((slot) => {
-                const isDone = slot.status === "completed";
-                return (
-                  <div
-                    key={slot.id}
-                    className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 transition-all ${
-                      isDone
-                        ? "bg-emerald-500/10 border-emerald-500/30 opacity-75"
-                        : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
-                    }`}
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between items-center text-[10px] font-bold">
-                        <span className="text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded font-mono">
-                          {slot.time}
-                        </span>
-                        <span
-                          className={`capitalize font-bold ${
-                            isDone ? "text-emerald-400" : "text-amber-400"
-                          }`}
-                        >
-                          {slot.status}
-                        </span>
-                      </div>
-                      <h4
-                        className={`text-xs font-bold leading-snug ${
-                          isDone ? "line-through text-slate-400" : "text-white"
-                        }`}
-                      >
-                        {slot.topic}
-                      </h4>
-                      <p className="text-[10px] text-slate-400">
-                        {slot.subject}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() =>
-                        dispatch(
-                          toggleSlotStatus({
-                            dayIndex: dayIdx,
-                            slotId: slot.id,
-                          }),
-                        )
-                      }
-                      className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {dayPlan.slots.map((slot) => {
+                  const isDone = slot.status === "completed";
+                  return (
+                    <div
+                      key={slot.id}
+                      className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 transition-all ${
                         isDone
-                          ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                          : "bg-indigo-600 text-white hover:bg-indigo-500"
+                          ? "bg-emerald-500/10 border-emerald-500/30 opacity-75"
+                          : "bg-[#070A11] border-slate-800 hover:border-slate-700"
                       }`}
                     >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>
-                        {isDone ? "Mark Incomplete" : "Check Off Session"}
-                      </span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </section>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center text-[10px] font-bold">
+                          <span className="text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded font-mono">
+                            {slot.time}
+                          </span>
+                          <span
+                            className={`capitalize font-bold ${
+                              isDone ? "text-emerald-400" : "text-amber-400"
+                            }`}
+                          >
+                            {slot.status}
+                          </span>
+                        </div>
+                        <h4
+                          className={`text-xs font-bold leading-snug ${
+                            isDone
+                              ? "line-through text-slate-400"
+                              : "text-white"
+                          }`}
+                        >
+                          {slot.topic}
+                        </h4>
+                        <p className="text-[10px] text-slate-400">
+                          {slot.subject}
+                        </p>
+                      </div>
 
-      {/* 5. EDIT COURSE DEADLINE MODAL */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          dispatch(
+                            toggleSlotStatus({
+                              dayIndex: dayIdx,
+                              slotId: slot.id,
+                            }),
+                          )
+                        }
+                        className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          isDone
+                            ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                            : "bg-indigo-600 text-white hover:bg-indigo-500"
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>
+                          {isDone ? "Mark Incomplete" : "Check Off Session"}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Edit Deadline Modal */}
       {editingCourse && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#121824] border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+          <div className="bg-[#0F1624] border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <div>
               <h3 className="text-sm font-bold text-white">
-                Set Course Completion Deadline
+                Update Course Deadline
               </h3>
               <p className="text-xs text-slate-400 truncate mt-0.5">
                 {editingCourse.title}
@@ -668,7 +665,7 @@ export default function StudyPlannerPage() {
                 required
                 value={deadlineInput}
                 onChange={(e) => setDeadlineInput(e.target.value)}
-                className="w-full p-2.5 bg-[#0B0F17] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full p-2.5 bg-[#070A11] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
               />
 
               <div className="flex justify-end gap-2 text-xs">

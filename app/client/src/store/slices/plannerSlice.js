@@ -1,27 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  days: [
-    {
-      day: "Monday",
-      slots: [
-        {
-          id: "s-1",
-          time: "06:00 - 08:00 AM",
-          subject: "Mathematics",
-          topic: "Calculus Ch 7 PYQs",
-          status: "completed",
-        },
-        {
-          id: "s-2",
-          time: "04:00 - 06:00 PM",
-          subject: "Physics",
-          topic: "Wave Optics Numericals",
-          status: "pending",
-        },
-      ],
-    },
-  ],
+  days: [],
 };
 
 const plannerSlice = createSlice({
@@ -36,7 +16,7 @@ const plannerSlice = createSlice({
       }
     },
     setFullSchedule: (state, action) => {
-      state.days = action.payload;
+      state.days = action.payload || [];
     },
   },
 });

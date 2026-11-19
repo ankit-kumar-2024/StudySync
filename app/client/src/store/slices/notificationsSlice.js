@@ -1,30 +1,16 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  items: [
-    {
-      id: "notif-1",
-      title: "Urgent Deadline",
-      message: "Calculus Ch 7 PYQ Set is due soon.",
-      type: "deadline",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "notif-2",
-      title: "AI Tip Ready",
-      message: "Ace recommends reviewing Wave Optics speed drill.",
-      type: "ai_tip",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    },
-  ],
+  items: [], // Starts empty
 };
 
 const notificationsSlice = createSlice({
   name: "notifications",
   initialState,
   reducers: {
+    setNotifications: (state, action) => {
+      state.items = action.payload || [];
+    },
     markAsRead: (state, action) => {
       const item = state.items.find((n) => n.id === action.payload);
       if (item) item.is_read = true;
@@ -37,5 +23,6 @@ const notificationsSlice = createSlice({
   },
 });
 
-export const { markAsRead, markAllAsRead } = notificationsSlice.actions;
+export const { setNotifications, markAsRead, markAllAsRead } =
+  notificationsSlice.actions;
 export default notificationsSlice.reducer;

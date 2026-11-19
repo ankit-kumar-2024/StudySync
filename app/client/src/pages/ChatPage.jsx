@@ -7,163 +7,54 @@ import {
   RotateCcw,
   Bot,
   User,
-  PlayCircle,
-  FileText,
   HelpCircle,
+  FileText,
+  BookOpen,
+  Paperclip,
   Calendar,
   CheckCircle2,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
-import {
-  addResource,
-  setActiveVideoFromCourse,
-} from "../store/slices/resourcesSlice";
+import { addResource } from "../store/slices/resourcesSlice";
+import { addAvailableTest, setActiveTest } from "../store/slices/testsSlice";
 import { setFullSchedule } from "../store/slices/plannerSlice";
 
-// ============================================================================
-// STRICT VALIDATION HELPERS (Bot NEVER advances on invalid or ambiguous answers)
-// ============================================================================
-const FILLER_WORDS = new Set([
-  "ok",
-  "okay",
-  "yes",
-  "no",
-  "hi",
-  "hello",
-  "hey",
-  "nothing",
-  "none",
-  "idk",
-  "asdf",
-  "test",
-  "abc",
-  "xyz",
-  "123",
-]);
+const AGENT_OPTIONS = [
+  {
+    id: "test",
+    label: "Practice Test",
+    desc: "Topic + question count with shuffled retakes",
+    icon: HelpCircle,
+    accent:
+      "text-emerald-400 border-emerald-500/30 hover:border-emerald-400 bg-emerald-500/10",
+  },
+  {
+    id: "homework",
+    label: "Assignment / Homework",
+    desc: "Generate PDF book, text answers, or code",
+    icon: FileText,
+    accent:
+      "text-indigo-400 border-indigo-500/30 hover:border-indigo-400 bg-indigo-500/10",
+  },
+  {
+    id: "course",
+    label: "Complete Course",
+    desc: "Video lectures, PDF notes, books, tests & deadline",
+    icon: BookOpen,
+    accent:
+      "text-cyan-400 border-cyan-500/30 hover:border-cyan-400 bg-cyan-500/10",
+  },
+  {
+    id: "free",
+    label: "Free Doubt Chat",
+    desc: "Ask doubts or share your thoughts openly",
+    icon: MessageSquare,
+    accent:
+      "text-amber-400 border-amber-500/30 hover:border-amber-400 bg-amber-500/10",
+  },
+];
 
-function validateCourseTitle(raw) {
-  const clean = raw.trim();
-  const lettersOnly = clean.replace(/[^a-zA-Z]/g, "");
-  if (clean.length < 3 || lettersOnly.length < 3) {
-    return {
-      valid: false,
-      error:
-        "Please enter a meaningful **course name** (at least 3 letters, e.g., *Full-Stack MERN Mastery* or *Organic Chemistry Crash Course*). I cannot proceed with numbers or symbols alone.",
-    };
-  }
-  if (FILLER_WORDS.has(clean.toLowerCase())) {
-    return {
-      valid: false,
-      error: `"${clean}" is not a valid course title. Please tell me the actual name of the course you want to study.`,
-    };
-  }
-  return { valid: true, value: clean };
-}
-
-function validateTopicsList(raw) {
-  const parts = raw
-    .split(/,|\n|;/)
-    .map((t) => t.trim())
-    .filter(Boolean);
-
-  const validTopics = parts.filter((t) => {
-    const letters = t.replace(/[^a-zA-Z]/g, "");
-    return letters.length >= 3 && !FILLER_WORDS.has(t.toLowerCase());
-  });
-
-  if (validTopics.length === 0) {
-    return {
-      valid: false,
-      error:
-        "Please provide at least one valid **topic name** (e.g., *Closures, Promises, Event Loop*). Generic words like 'yes', 'no', or random characters are not accepted.",
-    };
-  }
-  return { valid: true, value: validTopics };
-}
-
-function validateYesNo(raw, featureLabel) {
-  const clean = raw.trim().toLowerCase();
-  const yesPatterns = [
-    "yes",
-    "y",
-    "yeah",
-    "yep",
-    "sure",
-    "haan",
-    "ha",
-    "want",
-    "include",
-    "yes, include books & pdfs",
-    "yes, include video lectures",
-  ];
-  const noPatterns = [
-    "no",
-    "n",
-    "nope",
-    "nah",
-    "nahi",
-    "na",
-    "skip",
-    "no, skip pdfs",
-    "no, skip videos",
-  ];
-
-  if (yesPatterns.includes(clean) || clean.startsWith("yes")) {
-    return { valid: true, value: true };
-  }
-  if (noPatterns.includes(clean) || clean.startsWith("no")) {
-    return { valid: true, value: false };
-  }
-
-  return {
-    valid: false,
-    error: `Invalid response. Please reply clearly with **Yes** or **No** for whether you want **${featureLabel}**.`,
-  };
-}
-
-function validateTestAndDeadline(raw) {
-  const clean = raw.trim().toLowerCase();
-
-  // Check for clear Yes or No regarding the practice test
-  const hasYes = /\b(yes|y|yeah|sure|haan|ha|want|include)\b/.test(clean);
-  const hasNo = /\b(no|n|nope|nahi|na|skip)\b/.test(clean);
-
-  if (!hasYes && !hasNo) {
-    return {
-      valid: false,
-      error:
-        "Please specify **Yes** or **No** for the **50-question practice test** AND include your **time boundation** (for example: *Yes, 7 days* or *No, 2 weeks*).",
-    };
-  }
-
-  // Check for a valid timeframe (e.g., "7 days", "2 weeks", "1 month", or future date)
-  const timeMatch = clean.match(
-    /(\d+)\s*(day|days|week|weeks|month|months|hour|hours)/,
-  );
-  const parsedDate = Date.parse(raw.replace(/^(yes|no)[,\s-]*/i, "").trim());
-
-  if (!timeMatch && (Number.isNaN(parsedDate) || parsedDate <= Date.now())) {
-    return {
-      valid: false,
-      error:
-        "Please include a valid **time boundation** to complete the course (e.g., *Yes, 7 days*, *Yes, 2 weeks*, or *Yes, 1 month*). I cannot create the course without a valid timeline.",
-    };
-  }
-
-  const timeBoundLabel = timeMatch
-    ? `${timeMatch[1]} ${timeMatch[2]}`
-    : new Date(parsedDate).toLocaleDateString();
-
-  return {
-    valid: true,
-    includeTests: hasYes && !hasNo,
-    timeBoundation: timeBoundLabel,
-  };
-}
-
-// ============================================================================
-// MAIN CHATBOT PAGE
-// ============================================================================
 export default function ChatPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -171,32 +62,47 @@ export default function ChatPage() {
   const user = useSelector((state) => state.auth.user);
   const messagesEndRef = useRef(null);
 
-  const [wizardStep, setWizardStep] = useState(1);
-  const [courseConfig, setCourseConfig] = useState({
+  // 'free' | 'test' | 'homework' | 'course'
+  const [agentMode, setAgentMode] = useState("free");
+  const [step, setStep] = useState(0);
+
+  // Practice Test state
+  const [testDraft, setTestDraft] = useState({ topic: "", count: 10 });
+
+  // Homework / Assignment state
+  const [hwFileName, setHwFileName] = useState("");
+  const [hwFormat, setHwFormat] = useState("text"); // 'text' | 'pdf' | 'code'
+
+  // 7-Step Complete Course state
+  const [courseDraft, setCourseDraft] = useState({
     courseTitle: "",
+    courseDescription: "",
     topicsList: [],
-    includeBooksPdf: true,
+    includePdfNotes: true,
+    includeGoogleBooks: true,
     includeVideos: true,
     includeTests: true,
-    timeBoundation: "",
+    deadline: "",
   });
 
-  const initialGreeting = {
-    id: "step-1",
+  const buildWelcomeMessage = () => ({
+    id: `init-${Date.now()}`,
     sender: "ai",
-    text: `Hello ${user?.name?.split(" ")[0] || "Student"}! I am **Sync AI**, your Course Architect.\n\n**Question 1 of 5:** Tell me the **name or title of the course** that you want (you can choose whatever name you want).`,
+    text: `Hi ${user?.name?.split(" ")[0] || "there"}! I am **Sync AI**.\n\nChoose what you want me to build below, or just type your message to ask doubts and share your thoughts directly:`,
+    showModeOptions: true,
     timestamp: "Now",
-  };
+  });
 
-  const [messages, setMessages] = useState([initialGreeting]);
+  const [messages, setMessages] = useState([buildWelcomeMessage()]);
   const [input, setInput] = useState("");
-  const [isBuilding, setIsBuilding] = useState(false);
+  const [deadlinePicker, setDeadlinePicker] = useState("");
+  const [isBusy, setIsBusy] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isBuilding]);
+  }, [messages, isBusy]);
 
-  const appendAiMessage = (text, extra = {}) => {
+  const pushAi = (text, extra = {}) => {
     setMessages((prev) => [
       ...prev,
       {
@@ -212,29 +118,70 @@ export default function ChatPage() {
     ]);
   };
 
-  const resetWizard = () => {
-    setWizardStep(1);
-    setCourseConfig({
-      courseTitle: "",
-      topicsList: [],
-      includeBooksPdf: true,
-      includeVideos: true,
-      includeTests: true,
-      timeBoundation: "",
-    });
-    setMessages([initialGreeting]);
+  const selectAgentMode = (mode) => {
+    setAgentMode(mode);
+    setDeadlinePicker("");
+
+    if (mode === "free") {
+      setStep(0);
+      pushAi(
+        "You're in **Free Doubt Chat**. Ask any question or share your thoughts!",
+      );
+    } else if (mode === "test") {
+      setStep(1);
+      setTestDraft({ topic: "", count: 10 });
+      pushAi(
+        "**Practice Test Builder**\n\n**Question 1 of 2:** On which **topic** do you want to practice a test?",
+      );
+    } else if (mode === "homework") {
+      setStep(1);
+      setHwFileName("");
+      pushAi(
+        "**Assignment & Homework Helper**\n\nWhat do you want? Tell me your questions, attach a PDF if you have one, and choose whether you want a **PDF Book**, **Text Answer**, or **Code**.",
+      );
+    } else if (mode === "course") {
+      setStep(1);
+      setCourseDraft({
+        courseTitle: "",
+        courseDescription: "",
+        topicsList: [],
+        includePdfNotes: true,
+        includeGoogleBooks: true,
+        includeVideos: true,
+        includeTests: true,
+        deadline: "",
+      });
+      pushAi(
+        "**Complete Course Builder (7 Steps)**\n\n**Question 1 of 7:** What is the **title** of the course you want to create?",
+      );
+    }
   };
 
-  const handleUserReply = async (rawReply) => {
-    const answer = (rawReply ?? input).trim();
-    if (!answer || isBuilding) return;
+  const parseYesNo = (raw) => {
+    const clean = raw.trim().toLowerCase();
+    if (/^(yes|y|yeah|sure|haan|ha|include|want)/.test(clean)) return true;
+    if (/^(no|n|nope|nahi|na|skip)/.test(clean)) return false;
+    return null;
+  };
+
+  const handleFileAttach = (e) => {
+    const file = e.target.files?.[0];
+    if (file) setHwFileName(file.name);
+  };
+
+  const handleSend = async (overrideText) => {
+    const text = (overrideText ?? input).trim();
+    if (!text || isBusy) return;
 
     setMessages((prev) => [
       ...prev,
       {
         id: `u-${Date.now()}`,
         sender: "user",
-        text: answer,
+        text:
+          hwFileName && agentMode === "homework"
+            ? `[Attached: ${hwFileName}] ${text}`
+            : text,
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -243,198 +190,333 @@ export default function ChatPage() {
     ]);
     setInput("");
 
-    // STEP 1: Validate Course Name
-    if (wizardStep === 1) {
-      const check = validateCourseTitle(answer);
-      if (!check.valid) {
-        setTimeout(
-          () => appendAiMessage(check.error, { isWarning: true }),
-          200,
-        );
-        return;
-      }
-      setCourseConfig((prev) => ({ ...prev, courseTitle: check.value }));
-      setWizardStep(2);
-      setTimeout(() => {
-        appendAiMessage(
-          `Course title confirmed: **"${check.value}"**.\n\n**Question 2 of 5:** Tell me the **topics** that you want to learn in this course (separate topics with commas, e.g., *Closures, Promises, Event Loop*).`,
-        );
-      }, 200);
-      return;
-    }
-
-    // STEP 2: Validate Topics List
-    if (wizardStep === 2) {
-      const check = validateTopicsList(answer);
-      if (!check.valid) {
-        setTimeout(
-          () => appendAiMessage(check.error, { isWarning: true }),
-          200,
-        );
-        return;
-      }
-      setCourseConfig((prev) => ({ ...prev, topicsList: check.value }));
-      setWizardStep(3);
-      setTimeout(() => {
-        appendAiMessage(
-          `Added **${check.value.length} topics**: *${check.value.join(
-            ", ",
-          )}*.\n\n**Question 3 of 5:** Do you want **Books and PDFs** for these topics?`,
-          { quickChoices: ["Yes, include Books & PDFs", "No, skip PDFs"] },
-        );
-      }, 200);
-      return;
-    }
-
-    // STEP 3: Validate Books & PDFs (Yes/No)
-    if (wizardStep === 3) {
-      const check = validateYesNo(answer, "Books and PDFs");
-      if (!check.valid) {
-        setTimeout(
-          () =>
-            appendAiMessage(check.error, {
-              isWarning: true,
-              quickChoices: ["Yes, include Books & PDFs", "No, skip PDFs"],
-            }),
-          200,
-        );
-        return;
-      }
-      setCourseConfig((prev) => ({ ...prev, includeBooksPdf: check.value }));
-      setWizardStep(4);
-      setTimeout(() => {
-        appendAiMessage(
-          `${check.value ? "Books & PDFs included." : "Books & PDFs skipped."}\n\n**Question 4 of 5:** Do you want **Video Lectures** on these topics?`,
-          { quickChoices: ["Yes, include Video Lectures", "No, skip Videos"] },
-        );
-      }, 200);
-      return;
-    }
-
-    // STEP 4: Validate Video Lectures (Yes/No)
-    if (wizardStep === 4) {
-      const check = validateYesNo(answer, "Video Lectures");
-      if (!check.valid) {
-        setTimeout(
-          () =>
-            appendAiMessage(check.error, {
-              isWarning: true,
-              quickChoices: ["Yes, include Video Lectures", "No, skip Videos"],
-            }),
-          200,
-        );
-        return;
-      }
-      setCourseConfig((prev) => ({ ...prev, includeVideos: check.value }));
-      setWizardStep(5);
-      setTimeout(() => {
-        appendAiMessage(
-          `${check.value ? "Video lectures included." : "Video lectures skipped."}\n\n**Question 5 of 5:** Do you want a **practice test (50 questions per topic)** to practice this course, and what is your **time boundation** to complete the course?`,
-          {
-            quickChoices: [
-              "Yes, 7 days",
-              "Yes, 14 days",
-              "Yes, 30 days",
-              "No, 7 days",
-            ],
-          },
-        );
-      }, 200);
-      return;
-    }
-
-    // STEP 5: Validate Practice Test + Time Boundation -> Build Course
-    if (wizardStep === 5) {
-      const check = validateTestAndDeadline(answer);
-      if (!check.valid) {
-        setTimeout(
-          () =>
-            appendAiMessage(check.error, {
-              isWarning: true,
-              quickChoices: [
-                "Yes, 7 days",
-                "Yes, 14 days",
-                "Yes, 30 days",
-                "No, 7 days",
-              ],
-            }),
-          200,
-        );
-        return;
-      }
-
-      const finalPayload = {
-        ...courseConfig,
-        includeTests: check.includeTests,
-        timeBoundation: check.timeBoundation,
-      };
-      setCourseConfig(finalPayload);
-      setWizardStep(6);
-      setIsBuilding(true);
-
-      appendAiMessage(
-        `All 5 answers verified! Sync AI is now generating **"${finalPayload.courseTitle}"** (1 YouTube Video + 1 PDF Book + 1 Dynamic 50-Question Practice Test per topic • Deadline: **${finalPayload.timeBoundation}**)...`,
-      );
-
+    // MODE A: FREE DOUBT & THOUGHT CONVERSATION
+    if (agentMode === "free") {
+      setIsBusy(true);
       try {
-        const res = await fetch("http://localhost:5000/api/ai/build-course", {
+        const res = await fetch("http://localhost:5000/api/ai/chat", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(finalPayload),
+          body: JSON.stringify({ prompt: text, history: messages.slice(-8) }),
         });
         const data = await res.json();
-
-        if (res.ok && data.course) {
-          dispatch(addResource(data.course));
-          (data.topicPdfs || []).forEach((pdfItem) =>
-            dispatch(addResource(pdfItem)),
-          );
-          if (data.plannerDays) dispatch(setFullSchedule(data.plannerDays));
-
-          appendAiMessage(
-            `Course **"${data.course.title}"** is ready! Everything is synced to **Books, PDFs & Courses**, **Video Lessons**, **50-Q Practice Tests**, and **Study Planner**:`,
-            { generatedCourse: data.course },
-          );
-        } else {
-          appendAiMessage(
-            data.error || "Failed to build course. Please try again.",
-          );
-        }
-      } catch {
-        appendAiMessage("Unable to connect to Sync AI server on port 5000.");
+        pushAi(data.reply || data.error || "Unable to respond right now.");
       } finally {
-        setIsBuilding(false);
+        setIsBusy(false);
       }
       return;
     }
 
-    // STEP 6: Post-Creation Follow-up Chat
-    setIsBuilding(true);
-    try {
-      const res = await fetch("http://localhost:5000/api/ai/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ prompt: answer, history: messages.slice(-6) }),
-      });
-      const data = await res.json();
-      appendAiMessage(data.reply || "How else can I assist with your course?");
-    } finally {
-      setIsBuilding(false);
+    // MODE B: PRACTICE TEST BUILDER
+    if (agentMode === "test") {
+      if (step === 1) {
+        if (text.replace(/[^a-zA-Z]/g, "").length < 3) {
+          pushAi(
+            "Please enter a valid **topic name** (e.g., *React Hooks*, *Thermodynamics*, or *SQL Joins*).",
+            { isWarning: true },
+          );
+          return;
+        }
+        setTestDraft((prev) => ({ ...prev, topic: text }));
+        setStep(2);
+        pushAi(
+          `Topic set to **"${text}"**.\n\n**Question 2 of 2:** How many **questions** do you want in this practice test? (1 to 50)`,
+          {
+            quickChoices: [
+              "10 Questions",
+              "20 Questions",
+              "30 Questions",
+              "50 Questions",
+            ],
+          },
+        );
+        return;
+      }
+
+      if (step === 2) {
+        const num = parseInt(text.replace(/\D/g, ""), 10);
+        if (!num || num < 1 || num > 50) {
+          pushAi(
+            "Please enter a valid number of questions between **1 and 50**.",
+            {
+              isWarning: true,
+              quickChoices: ["10 Questions", "25 Questions", "50 Questions"],
+            },
+          );
+          return;
+        }
+
+        setIsBusy(true);
+        pushAi(
+          `Generating your reusable **${num}-question practice test** on **"${testDraft.topic}"**...`,
+        );
+        try {
+          const res = await fetch(
+            "http://localhost:5000/api/tests/create-reusable",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ topic: testDraft.topic, count: num }),
+            },
+          );
+          const data = await res.json();
+          if (res.ok && data.test) {
+            dispatch(addAvailableTest(data.test));
+            dispatch(setActiveTest(data.test));
+            setAgentMode("free");
+            setStep(0);
+            pushAi(
+              `Your **${data.test.title}** is ready! You can attempt it multiple times—every attempt shuffles the question sequence and reviews right, wrong, and missed answers.`,
+              { createdTest: data.test, showModeOptions: true },
+            );
+          } else {
+            pushAi(data.error || "Failed to generate test.");
+          }
+        } finally {
+          setIsBusy(false);
+        }
+        return;
+      }
+    }
+
+    // MODE C: ASSIGNMENT & HOMEWORK ASSISTANT
+    if (agentMode === "homework") {
+      setIsBusy(true);
+      try {
+        const res = await fetch("http://localhost:5000/api/ai/homework", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            requestText: text,
+            outputFormat: hwFormat,
+            uploadedFileName: hwFileName,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          if (data.pdfResource) dispatch(addResource(data.pdfResource));
+          pushAi(data.reply, {
+            createdPdf: data.pdfResource,
+            showModeOptions: true,
+          });
+          setHwFileName("");
+        } else {
+          pushAi(data.error || "Failed to generate homework response.");
+        }
+      } finally {
+        setIsBusy(false);
+      }
+      return;
+    }
+
+    // MODE D: 7-STEP COMPLETE COURSE BUILDER
+    if (agentMode === "course") {
+      if (step === 1) {
+        if (text.replace(/[^a-zA-Z]/g, "").length < 3) {
+          pushAi(
+            "Please enter a meaningful **course title** (at least 3 letters).",
+            {
+              isWarning: true,
+            },
+          );
+          return;
+        }
+        setCourseDraft((prev) => ({ ...prev, courseTitle: text }));
+        setStep(2);
+        pushAi(
+          `Course title: **"${text}"**.\n\n**Question 2 of 7:** Provide a short **description** of what this course should cover.`,
+        );
+        return;
+      }
+
+      if (step === 2) {
+        if (text.replace(/[^a-zA-Z]/g, "").length < 5) {
+          pushAi("Please enter a clear **description** of the course goals.", {
+            isWarning: true,
+          });
+          return;
+        }
+        setCourseDraft((prev) => ({ ...prev, courseDescription: text }));
+        setStep(3);
+        pushAi(
+          "**Question 3 of 7:** What **topics** do you want to complete in this course? (Separate multiple topics with commas)",
+        );
+        return;
+      }
+
+      if (step === 3) {
+        const topics = text
+          .split(/,|\n|;/)
+          .map((t) => t.trim())
+          .filter((t) => t.replace(/[^a-zA-Z]/g, "").length >= 2);
+        if (topics.length === 0) {
+          pushAi(
+            "Please list at least one valid **topic** (e.g., *Arrays, Linked Lists, Trees*).",
+            { isWarning: true },
+          );
+          return;
+        }
+        setCourseDraft((prev) => ({ ...prev, topicsList: topics }));
+        setStep(4);
+        pushAi(
+          `Added **${topics.length} topics**: *${topics.join(", ")}*.\n\n**Question 4 of 7:** Do you want **PDF notes** generated on each topic?`,
+          { quickChoices: ["Yes, include PDF Notes", "No, skip PDF Notes"] },
+        );
+        return;
+      }
+
+      if (step === 4) {
+        const yn = parseYesNo(text);
+        if (yn === null) {
+          pushAi(
+            "Please reply **Yes** or **No** for PDF notes on each topic.",
+            {
+              isWarning: true,
+              quickChoices: ["Yes, include PDF Notes", "No, skip PDF Notes"],
+            },
+          );
+          return;
+        }
+        setCourseDraft((prev) => ({ ...prev, includePdfNotes: yn }));
+        setStep(5);
+        pushAi(
+          "**Question 5 of 7:** Do you want **PDF books from Google** on each topic if available?",
+          {
+            quickChoices: [
+              "Yes, include Google Books",
+              "No, skip Google Books",
+            ],
+          },
+        );
+        return;
+      }
+
+      if (step === 5) {
+        const yn = parseYesNo(text);
+        if (yn === null) {
+          pushAi("Please reply **Yes** or **No** for Google PDF books.", {
+            isWarning: true,
+            quickChoices: [
+              "Yes, include Google Books",
+              "No, skip Google Books",
+            ],
+          });
+          return;
+        }
+        setCourseDraft((prev) => ({ ...prev, includeGoogleBooks: yn }));
+        setStep(6);
+        pushAi(
+          "**Question 6 of 7:** Do you want **video lectures** and **practice tests** on each topic?",
+          {
+            quickChoices: [
+              "Yes, both Videos & Tests",
+              "Only Video Lectures",
+              "No, skip both",
+            ],
+          },
+        );
+        return;
+      }
+
+      if (step === 6) {
+        const lower = text.toLowerCase();
+        const yn = parseYesNo(text);
+        if (yn === null && !lower.includes("only")) {
+          pushAi(
+            "Please select whether you want **video lectures** and **practice tests**.",
+            {
+              isWarning: true,
+              quickChoices: [
+                "Yes, both Videos & Tests",
+                "Only Video Lectures",
+                "No, skip both",
+              ],
+            },
+          );
+          return;
+        }
+        const wantsVideos = yn === true || lower.includes("video");
+        const wantsTests = yn === true || lower.includes("test");
+        setCourseDraft((prev) => ({
+          ...prev,
+          includeVideos: wantsVideos,
+          includeTests: wantsTests,
+        }));
+        setStep(7);
+        pushAi(
+          "**Question 7 of 7:** Is there any **time boundation / deadline** to complete the course? Pick a target date below or type a timeframe (e.g., *14 days*).",
+          { showDatePicker: true },
+        );
+        return;
+      }
+
+      if (step === 7) {
+        let resolvedDeadline = deadlinePicker;
+        if (!resolvedDeadline) {
+          const daysMatch = text.match(/(\d+)/);
+          const days = daysMatch ? parseInt(daysMatch[1], 10) : 7;
+          resolvedDeadline = new Date(
+            Date.now() + days * 86400000,
+          ).toISOString();
+        }
+
+        const payload = { ...courseDraft, deadline: resolvedDeadline };
+        setIsBusy(true);
+        pushAi(
+          `Building your complete course **"${payload.courseTitle}"** scheduled to finish by **${new Date(
+            resolvedDeadline,
+          ).toLocaleDateString()}**...`,
+        );
+
+        try {
+          const res = await fetch("http://localhost:5000/api/ai/build-course", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (res.ok && data.course) {
+            (data.resources || []).forEach((r) => dispatch(addResource(r)));
+            (data.tests || []).forEach((t) => dispatch(addAvailableTest(t)));
+            if (data.plannerDays) dispatch(setFullSchedule(data.plannerDays));
+
+            setAgentMode("free");
+            setStep(0);
+            pushAi(
+              `Complete course **"${data.course.title}"** is generated and synced across **Study Planner**, **Books & PDFs**, **Video Lessons**, and **Practice Tests**!`,
+              { createdCourse: data.course, showModeOptions: true },
+            );
+          } else {
+            pushAi(data.error || "Failed to generate complete course.");
+          }
+        } finally {
+          setIsBusy(false);
+        }
+      }
     }
   };
 
+  const activeModeLabel =
+    AGENT_OPTIONS.find((o) => o.id === agentMode)?.label || "Free Doubt Chat";
+
   return (
-    <div className="w-full max-w-5xl mx-auto h-[calc(100vh-120px)] flex flex-col bg-[#121824] text-slate-100 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden font-sans">
-      {/* Header with 5-Step Progress Indicator */}
-      <header className="px-5 py-3.5 bg-[#0B0F17] border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+    <div className="w-full max-w-5xl mx-auto h-[calc(100vh-120px)] flex flex-col bg-[#0F1624] text-slate-100 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
+      {/* Clean Minimal Header */}
+      <header className="px-4 sm:px-6 py-3.5 bg-[#0B0F19] border-b border-slate-800 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-lg">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-white flex items-center justify-center shadow-lg">
             <Sparkles className="w-4.5 h-4.5" />
           </div>
           <div>
@@ -442,44 +524,28 @@ export default function ChatPage() {
               <h1 className="text-sm sm:text-base font-bold text-white">
                 Sync AI
               </h1>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold">
-                {wizardStep <= 5
-                  ? `Question ${wizardStep} / 5`
-                  : "Course Built"}
+              <span className="px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold">
+                {activeModeLabel}
               </span>
             </div>
             <p className="text-[11px] text-emerald-400 font-medium">
-              Strict Validated Course, Video, PDF Book & 50-Q Test Builder
+              Online • Academic & Course Assistant
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* 5-Step Progress Dots */}
-          <div className="hidden sm:flex items-center gap-1.5">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <span
-                key={s}
-                className={`h-2 rounded-full transition-all ${
-                  wizardStep > s
-                    ? "w-5 bg-emerald-500"
-                    : wizardStep === s
-                      ? "w-6 bg-indigo-500"
-                      : "w-2 bg-slate-700"
-                }`}
-              />
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={resetWizard}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#121824] hover:bg-slate-800 text-xs font-semibold text-slate-300 border border-slate-800 cursor-pointer transition"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>New Course</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setAgentMode("free");
+            setStep(0);
+            setMessages([buildWelcomeMessage()]);
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1624] hover:bg-slate-800 text-xs font-semibold text-slate-300 border border-slate-800 cursor-pointer transition"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>New Chat</span>
+        </button>
       </header>
 
       {/* Message Stream */}
@@ -497,7 +563,7 @@ export default function ChatPage() {
                     ? "bg-indigo-600 text-white"
                     : m.isWarning
                       ? "bg-rose-500/20 border border-rose-500/40 text-rose-400"
-                      : "bg-[#0B0F17] border border-slate-700 text-cyan-400"
+                      : "bg-[#070A11] border border-slate-700 text-cyan-400"
                 }`}
               >
                 {isUser ? (
@@ -510,12 +576,12 @@ export default function ChatPage() {
               </div>
 
               <div
-                className={`max-w-[88%] sm:max-w-2xl rounded-2xl px-4 py-3.5 shadow-md space-y-3 ${
+                className={`max-w-[90%] sm:max-w-2xl rounded-2xl px-4 py-3.5 shadow-md space-y-3 ${
                   isUser
                     ? "bg-indigo-600 text-white rounded-tr-xs"
                     : m.isWarning
                       ? "bg-rose-950/50 border border-rose-500/40 text-rose-200 rounded-tl-xs"
-                      : "bg-[#0B0F17] border border-slate-800 text-slate-200 rounded-tl-xs"
+                      : "bg-[#070A11] border border-slate-800 text-slate-200 rounded-tl-xs"
                 }`}
               >
                 <div className="text-xs sm:text-[13px] whitespace-pre-line leading-relaxed">
@@ -524,23 +590,47 @@ export default function ChatPage() {
                       <strong key={i} className="font-bold text-white">
                         {chunk.slice(2, -2)}
                       </strong>
-                    ) : chunk.startsWith("*") && chunk.endsWith("*") ? (
-                      <em key={i} className="text-indigo-300">
-                        {chunk.slice(1, -1)}
-                      </em>
                     ) : (
                       <span key={i}>{chunk}</span>
                     ),
                   )}
                 </div>
 
+                {/* Workflow Option Cards Embedded Directly Inside AI Prompt Bubble */}
+                {m.showModeOptions && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {AGENT_OPTIONS.map((opt) => {
+                      const Icon = opt.icon;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => selectAgentMode(opt.id)}
+                          className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${opt.accent}`}
+                        >
+                          <Icon className="w-4 h-4 shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-white">
+                              {opt.label}
+                            </p>
+                            <p className="text-[11px] text-slate-300/80 leading-snug mt-0.5">
+                              {opt.desc}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Quick Choices */}
                 {m.quickChoices && (
                   <div className="flex flex-wrap gap-2 pt-1">
                     {m.quickChoices.map((choice, idx) => (
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => handleUserReply(choice)}
+                        onClick={() => handleSend(choice)}
                         className="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-semibold transition cursor-pointer"
                       >
                         {choice}
@@ -549,85 +639,106 @@ export default function ChatPage() {
                   </div>
                 )}
 
-                {m.generatedCourse && (
-                  <div className="p-4 rounded-2xl bg-[#121824] border border-indigo-500/30 space-y-3 mt-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-                      <div className="flex items-center gap-2">
+                {/* Deadline Date Picker in Step 7 */}
+                {m.showDatePicker && (
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <input
+                      type="date"
+                      value={deadlinePicker}
+                      onChange={(e) => setDeadlinePicker(e.target.value)}
+                      className="px-3 py-1.5 rounded-xl bg-[#0F1624] border border-slate-700 text-xs text-white"
+                    />
+                    <button
+                      type="button"
+                      disabled={!deadlinePicker}
+                      onClick={() => handleSend(`Deadline: ${deadlinePicker}`)}
+                      className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-bold cursor-pointer"
+                    >
+                      Confirm Deadline
+                    </button>
+                  </div>
+                )}
+
+                {/* Created Practice Test Card */}
+                {m.createdTest && (
+                  <div className="p-3.5 rounded-xl bg-[#0F1624] border border-emerald-500/30 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-white">
+                        {m.createdTest.title}
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        {m.createdTest.questions.length} Questions • Shuffles on
+                        every attempt
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dispatch(setActiveTest(m.createdTest));
+                        navigate("/app/tests");
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer shrink-0"
+                    >
+                      Start Test →
+                    </button>
+                  </div>
+                )}
+
+                {/* Created Homework PDF Card */}
+                {m.createdPdf && (
+                  <div className="p-3.5 rounded-xl bg-[#0F1624] border border-indigo-500/30 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-white">
+                        {m.createdPdf.title}
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        Saved to Books & PDF Vault
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/app/books")}
+                      className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer shrink-0"
+                    >
+                      Open PDF →
+                    </button>
+                  </div>
+                )}
+
+                {/* Created Complete Course Card */}
+                {m.createdCourse && (
+                  <div className="p-3.5 rounded-xl bg-[#0F1624] border border-cyan-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-bold text-white">
-                          {m.generatedCourse.title}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-amber-300 font-semibold flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        Deadline: {m.generatedCourse.timeBoundLabel}
+                        {m.createdCourse.title}
+                      </span>
+                      <span className="text-[10px] text-amber-300 font-semibold flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> Due{" "}
+                        {m.createdCourse.timeBoundLabel}
                       </span>
                     </div>
-
-                    <div className="space-y-2.5">
-                      {m.generatedCourse.courseData?.modules?.map(
-                        (mod, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 rounded-xl bg-[#0B0F17] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                          >
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-indigo-300 truncate">
-                                Topic {idx + 1}: {mod.moduleTitle}
-                              </p>
-                              <p className="text-[11px] text-slate-400 truncate">
-                                1 Video • 1 PDF Book • 50-Question Practice Test
-                              </p>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-                              {mod.video && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    dispatch(
-                                      setActiveVideoFromCourse(mod.video),
-                                    );
-                                    navigate("/app/videos");
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition"
-                                >
-                                  <PlayCircle className="w-3 h-3" /> Video
-                                </button>
-                              )}
-
-                              <button
-                                type="button"
-                                onClick={() => navigate("/app/books")}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition"
-                              >
-                                <FileText className="w-3 h-3" /> PDF Book
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  navigate(
-                                    `/app/tests?topic=${encodeURIComponent(mod.moduleTitle)}`,
-                                  )
-                                }
-                                className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-600 text-indigo-300 hover:text-white text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition"
-                              >
-                                <HelpCircle className="w-3 h-3" /> 50-Q Test
-                              </button>
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
-
-                    <div className="flex justify-end pt-1">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => navigate("/app/planner")}
-                        className="text-xs font-bold text-indigo-400 hover:underline cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold cursor-pointer"
                       >
-                        Track Progress & Timeline in Study Planner →
+                        Track in Study Planner
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate("/app/books")}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold cursor-pointer"
+                      >
+                        Open PDFs & Books
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate("/app/videos")}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold cursor-pointer"
+                      >
+                        Watch Lectures
                       </button>
                     </div>
                   </div>
@@ -641,28 +752,64 @@ export default function ChatPage() {
           );
         })}
 
-        {isBuilding && (
+        {isBusy && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#0B0F17] border border-slate-700 text-cyan-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-[#070A11] border border-slate-700 text-cyan-400 flex items-center justify-center">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="px-4 py-3 rounded-2xl bg-[#0B0F17] border border-slate-800 flex items-center gap-2 text-xs text-indigo-300">
+            <div className="px-4 py-3 rounded-2xl bg-[#070A11] border border-slate-800 flex items-center gap-2 text-xs text-indigo-300">
               <Sparkles className="w-3.5 h-3.5 animate-spin" />
-              <span>
-                Sync AI is building your videos, PDF books, and 50-Q tests...
-              </span>
+              <span>Sync AI is working...</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Composer */}
-      <footer className="p-3 sm:p-4 bg-[#0B0F17] border-t border-slate-800">
+      {/* Homework Format & File Bar */}
+      {agentMode === "homework" && (
+        <div className="px-4 py-2 bg-[#0B0F19] border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 text-[11px]">Output Format:</span>
+            {[
+              ["text", "Text Answer"],
+              ["pdf", "PDF Book / File"],
+              ["code", "Code Solution"],
+            ].map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setHwFormat(val)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold cursor-pointer ${
+                  hwFormat === val
+                    ? "bg-indigo-600 text-white"
+                    : "bg-[#0F1624] text-slate-400 border border-slate-800"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F1624] border border-slate-700 text-[11px] text-cyan-300 cursor-pointer hover:border-cyan-500">
+            <Paperclip className="w-3.5 h-3.5" />
+            <span>{hwFileName || "Attach PDF / Question File"}</span>
+            <input
+              type="file"
+              accept=".pdf,.txt,.png,.jpg"
+              onChange={handleFileAttach}
+              className="hidden"
+            />
+          </label>
+        </div>
+      )}
+
+      {/* Composer */}
+      <footer className="p-3 sm:p-4 bg-[#0B0F19] border-t border-slate-800">
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleUserReply();
+            handleSend();
           }}
           className="flex items-center gap-2.5"
         >
@@ -671,23 +818,19 @@ export default function ChatPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              wizardStep === 1
-                ? "Step 1: Enter a valid course title (e.g., Full-Stack React Mastery)..."
-                : wizardStep === 2
-                  ? "Step 2: Enter topics separated by commas (e.g., Hooks, Redux, Routing)..."
-                  : wizardStep === 3
-                    ? "Step 3: Reply Yes or No for Books & PDFs..."
-                    : wizardStep === 4
-                      ? "Step 4: Reply Yes or No for Video Lectures..."
-                      : wizardStep === 5
-                        ? "Step 5: Reply Yes/No for 50-Q Test + Timeline (e.g., Yes, 7 days)..."
-                        : "Ask Sync AI anything about your course..."
+              agentMode === "free"
+                ? "Ask Sync AI any doubt, share thoughts, or click an option above..."
+                : agentMode === "test"
+                  ? "Enter topic or number of questions..."
+                  : agentMode === "homework"
+                    ? "Paste your assignment question or describe the PDF book you want..."
+                    : "Answer Sync AI's course question..."
             }
-            className="flex-1 bg-[#121824] border border-slate-700 focus:border-indigo-500 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none"
+            className="flex-1 bg-[#070A11] border border-slate-700 focus:border-indigo-500 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none"
           />
           <button
             type="submit"
-            disabled={!input.trim() || isBuilding}
+            disabled={!input.trim() || isBusy}
             className="h-11 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
           >
             <Send className="w-4 h-4" />

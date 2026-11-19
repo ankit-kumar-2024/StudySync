@@ -60,20 +60,6 @@ export default function RegisterPage() {
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-indigo-600/25 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-2xl tracking-tight text-white">
-                StudySync
-              </span>
-              <span className="px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] font-bold uppercase tracking-wider">
-                SATMS
-              </span>
-            </div>
-          </Link>
-
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               Create your student workspace

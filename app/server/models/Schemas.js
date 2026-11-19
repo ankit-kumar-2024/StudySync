@@ -13,9 +13,9 @@ const userSchema = new mongoose.Schema(
     },
     password: { type: String, required: true },
     enrolmentNo: { type: String, default: "2400170900" },
-    exam_target: { type: String, default: "JEE Advanced" },
-    exam_date: { type: String, default: "2026-05-25" },
-    daily_goal_hours: { type: Number, default: 5 },
+    exam_target: { type: String, default: "Target Exam" },
+    exam_date: { type: String, default: "2026-12-31" },
+    daily_goal_hours: { type: Number, default: 4 },
     studyCenter: { type: String, default: "07162P, M.E.R.I.T" },
     settings: {
       emailDeadlines: { type: Boolean, default: true },
@@ -50,7 +50,7 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// 3. resources (Courses, PDF Books, PYQs, Notes)
+// 3. resources (Courses, Topic PDF Notes, Google Books)
 const resourceSchema = new mongoose.Schema(
   {
     userId: {
@@ -63,8 +63,8 @@ const resourceSchema = new mongoose.Schema(
     file_type: { type: String, default: "Course" },
     subject: { type: String, default: "General" },
     author: { type: String, default: "Sync AI" },
-    pages: { type: Number, default: 20 },
-    size: { type: String, default: "2.1 MB" },
+    pages: { type: Number, default: 16 },
+    size: { type: String, default: "1.8 MB" },
     tags: { type: [String], default: [] },
     exam_year: { type: Number, default: 2026 },
     deadline: { type: String, default: null },
@@ -75,7 +75,31 @@ const resourceSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// 4. test_attempts
+// 4. saved_tests (Reusable Practice Tests that shuffle on every attempt)
+const savedTestSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    title: { type: String, required: true },
+    topic: { type: String, required: true },
+    questions: [
+      {
+        id: Number,
+        q: String,
+        options: [String],
+        correct: String,
+        topic: String,
+        explanation: String,
+      },
+    ],
+  },
+  { timestamps: true },
+);
+
+// 5. test_attempts
 const testAttemptSchema = new mongoose.Schema(
   {
     userId: {
@@ -85,7 +109,7 @@ const testAttemptSchema = new mongoose.Schema(
     },
     attempt_id: { type: String, required: true },
     test_id: { type: String, required: true },
-    title: { type: String, default: "50-Q Practice Test" },
+    title: { type: String, default: "Practice Test" },
     score: Number,
     total_marks: Number,
     percentage: Number,
@@ -97,7 +121,7 @@ const testAttemptSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// 5. assignments
+// 6. assignments
 const assignmentSchema = new mongoose.Schema(
   {
     userId: {
@@ -121,7 +145,7 @@ const assignmentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// 6. ai_suggestions
+// 7. ai_suggestions
 const aiSuggestionSchema = new mongoose.Schema(
   {
     userId: {
@@ -136,7 +160,7 @@ const aiSuggestionSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// 7. notifications
+// 8. notifications
 const notificationSchema = new mongoose.Schema(
   {
     userId: {
@@ -157,7 +181,7 @@ const notificationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// 8. study_plans
+// 9. study_plans
 const plannerSchema = new mongoose.Schema(
   {
     userId: {
@@ -176,6 +200,7 @@ const plannerSchema = new mongoose.Schema(
 export const User = mongoose.model("User", userSchema);
 export const Task = mongoose.model("Task", taskSchema);
 export const Resource = mongoose.model("Resource", resourceSchema);
+export const SavedTest = mongoose.model("SavedTest", savedTestSchema);
 export const TestAttempt = mongoose.model("TestAttempt", testAttemptSchema);
 export const Assignment = mongoose.model("Assignment", assignmentSchema);
 export const AISuggestion = mongoose.model("AISuggestion", aiSuggestionSchema);

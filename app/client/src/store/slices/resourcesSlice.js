@@ -1,26 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const defaultResources = [
-  {
-    id: "r-2001",
-    title: "JEE Advanced Mathematics PYQ (2018-2024)",
-    file_type: "PYQ",
-    subject: "Mathematics",
-    size: "4.8 MB",
-    exam_year: 2024,
-  },
-  {
-    id: "r-2002",
-    title: "HC Verma Vol 1 - Mechanics Solutions",
-    file_type: "Book",
-    subject: "Physics",
-    size: "12.4 MB",
-    exam_year: null,
-  },
-];
-
 const initialState = {
-  items: defaultResources,
+  items: [],
   selectedFilter: "all",
   activeVideoFromCourse: null,
 };
@@ -30,7 +11,7 @@ const resourcesSlice = createSlice({
   initialState,
   reducers: {
     setResources: (state, action) => {
-      state.items = [...action.payload, ...defaultResources];
+      state.items = action.payload || [];
     },
     addResource: (state, action) => {
       state.items.unshift(action.payload);
@@ -57,9 +38,7 @@ const resourcesSlice = createSlice({
     updateCourseDeadline: (state, action) => {
       const { courseId, deadline } = action.payload;
       const course = state.items.find((r) => r.id === courseId);
-      if (course) {
-        course.deadline = deadline;
-      }
+      if (course) course.deadline = deadline;
     },
   },
 });

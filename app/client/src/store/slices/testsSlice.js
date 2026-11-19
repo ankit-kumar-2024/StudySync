@@ -9,36 +9,12 @@ export const fetchTestHistory = createAsyncThunk(
     });
     const data = await res.json();
     return res.ok ? data.history : [];
-  },
+  }
 );
 
 const initialState = {
-  availableTests: [
-    {
-      id: "test-1",
-      title: "JEE Advanced Mock Test #4",
-      subject: "Full Syllabus",
-      duration: "180 mins",
-      questionsCount: 75,
-      total_marks: 300,
-    },
-    {
-      id: "test-2",
-      title: "Calculus Diagnostics Quiz #2",
-      subject: "Mathematics",
-      duration: "45 mins",
-      questionsCount: 25,
-      total_marks: 100,
-    },
-    {
-      id: "test-3",
-      title: "Wave Optics Speed Drill",
-      subject: "Physics",
-      duration: "30 mins",
-      questionsCount: 20,
-      total_marks: 80,
-    },
-  ],
+  availableTests: [],
+  activeTest: null,
   history: [],
 };
 
@@ -46,8 +22,17 @@ const testsSlice = createSlice({
   name: "tests",
   initialState,
   reducers: {
+    setAvailableTests: (state, action) => {
+      state.availableTests = action.payload || [];
+    },
+    addAvailableTest: (state, action) => {
+      state.availableTests.unshift(action.payload);
+    },
+    setActiveTest: (state, action) => {
+      state.activeTest = action.payload;
+    },
     setTestHistory: (state, action) => {
-      state.history = action.payload;
+      state.history = action.payload || [];
     },
     recordTestAttempt: (state, action) => {
       state.history.unshift(action.payload);
@@ -60,5 +45,12 @@ const testsSlice = createSlice({
   },
 });
 
-export const { setTestHistory, recordTestAttempt } = testsSlice.actions;
+export const {
+  setAvailableTests,
+  addAvailableTest,
+  setActiveTest,
+  setTestHistory,
+  recordTestAttempt,
+} = testsSlice.actions;
+
 export default testsSlice.reducer;

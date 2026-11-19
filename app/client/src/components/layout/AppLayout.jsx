@@ -6,7 +6,10 @@ import LeftSidebar from "./LeftSidebar";
 import Footer from "./Footer";
 import { setTasks } from "../../store/slices/tasksSlice";
 import { setAssignments } from "../../store/slices/assignmentsSlice";
-import { setTestHistory } from "../../store/slices/testsSlice";
+import {
+  setTestHistory,
+  setAvailableTests,
+} from "../../store/slices/testsSlice";
 import { setResources } from "../../store/slices/resourcesSlice";
 import { setFullSchedule } from "../../store/slices/plannerSlice";
 
@@ -28,17 +31,14 @@ export default function AppLayout() {
         if (data.history) dispatch(setTestHistory(data.history));
         if (data.resources) dispatch(setResources(data.resources));
         if (data.days) dispatch(setFullSchedule(data.days));
+        if (data.savedTests) dispatch(setAvailableTests(data.savedTests));
       })
       .catch(() => {});
   }, [token, dispatch]);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setLeftOpen(true);
-      } else {
-        setLeftOpen(false);
-      }
+      setLeftOpen(window.innerWidth >= 1024);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -51,7 +51,6 @@ export default function AppLayout() {
 
   return (
     <div className="bg-[#070A11] text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white relative">
-      {/* Subtle ambient background glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
         <div className="absolute -top-40 left-1/4 w-[38rem] h-[38rem] rounded-full bg-indigo-600/[0.06] blur-[120px]" />
         <div className="absolute top-1/2 -right-24 w-[30rem] h-[30rem] rounded-full bg-cyan-500/[0.05] blur-[110px]" />
